@@ -1,5 +1,3 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using SimpleMessenger.Middleware;
 using SimpleMessenger.Services;
 
@@ -12,13 +10,6 @@ builder.WebHost.ConfigureKestrel(options =>
 
 builder.Services.AddSingleton<IClientManager, ClientManager>();
 builder.Services.AddSingleton<IChatService, ChatService>();
-
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-    });
 
 var app = builder.Build();
 
