@@ -9,6 +9,7 @@ builder.WebHost.ConfigureKestrel(options =>
 });
 
 builder.Services.AddSingleton<IClientManager, ClientManager>();
+builder.Services.AddSingleton<IMessageRepository, JsonMessageRepository>();
 builder.Services.AddSingleton<IChatService, ChatService>();
 
 var app = builder.Build();

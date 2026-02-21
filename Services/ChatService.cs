@@ -6,15 +6,15 @@ using Microsoft.Extensions.Logging;
 
 namespace SimpleMessenger.Services;
 
-public class ChatService : IChatService
+public class ChatService(IClientManager clientManager, IMessageRepository messageRepository, ILogger<ChatService> logger) : IChatService
 {
-    private readonly IClientManager _clientManager;
-    private readonly ILogger<ChatService> _logger;
+    private readonly IClientManager _clientManager = clientManager;
+    private readonly IMessageRepository _messageRepository = messageRepository;
+    private readonly ILogger<ChatService> _logger = logger;
 
-    public ChatService(IClientManager clientManager, ILogger<ChatService> logger)
+    public async Task<List<ChatMessage>> GetMessageHistoryAsync()
     {
-        _clientManager = clientManager;
-        _logger = logger;
+        return await _messageRepository.GetAllAsync();
     }
 
     public async Task SendMessageAsync(string clientId, ChatMessage message)
@@ -65,6 +65,13 @@ public class ChatService : IChatService
     public async Task HandleClientAsync(string clientId, WebSocket socket, CancellationToken ct)
     {
         _clientManager.AddClient(clientId, socket);
+
+        var history = await _messageRepository.GetAllAsync();
+        foreach (var msg in history)
+        {
+            await SendMessageAsync(clientId, msg);
+        }
+
         await BroadcastAsync(ChatMessage.System($"User {clientId} connected"));
 
         _logger.LogInformation("Client connected: {ClientId}", clientId);
@@ -87,9 +94,9 @@ public class ChatService : IChatService
 
                     if (!string.IsNullOrWhiteSpace(message?.Text))
                     {
-                        await BroadcastAsync(
-                            ChatMessage.Create(message.Text, message.Name ?? "Anonymous"), 
-                            clientId);
+                        var chatMessage = ChatMessage.Create(message.Text, message.Name ?? "Anonymous");
+                        await _messageRepository.AddAsync(chatMessage);
+                        await BroadcastAsync(chatMessage, clientId);
                     }
                 }
             }
