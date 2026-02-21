@@ -6,4 +6,5 @@ public interface IMessageRepository
 {
     Task<List<ChatMessage>> GetAllAsync();
     Task AddAsync(ChatMessage message);
+    Task ClearAsync();
 }

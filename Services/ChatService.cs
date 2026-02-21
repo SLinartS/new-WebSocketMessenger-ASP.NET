@@ -17,6 +17,12 @@ public class ChatService(IClientManager clientManager, IMessageRepository messag
         return await _messageRepository.GetAllAsync();
     }
 
+    public async Task ClearChatAsync()
+    {
+        await _messageRepository.ClearAsync();
+        await BroadcastAsync(ChatMessage.System("Chat has been cleared"));
+    }
+
     public async Task SendMessageAsync(string clientId, ChatMessage message)
     {
         var client = _clientManager.GetClient(clientId);
@@ -94,9 +100,16 @@ public class ChatService(IClientManager clientManager, IMessageRepository messag
 
                     if (!string.IsNullOrWhiteSpace(message?.Text))
                     {
-                        var chatMessage = ChatMessage.Create(message.Text, message.Name ?? "Anonymous");
-                        await _messageRepository.AddAsync(chatMessage);
-                        await BroadcastAsync(chatMessage, clientId);
+                        if (message.Type == "clear")
+                        {
+                            await ClearChatAsync();
+                        }
+                        else
+                        {
+                            var chatMessage = ChatMessage.Create(message.Text, message.Name ?? "Anonymous");
+                            await _messageRepository.AddAsync(chatMessage);
+                            await BroadcastAsync(chatMessage, clientId);
+                        }
                     }
                 }
             }

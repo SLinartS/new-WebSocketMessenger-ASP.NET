@@ -9,4 +9,5 @@ public interface IChatService
     Task BroadcastAsync(ChatMessage message, string? excludeClientId = null);
     Task HandleClientAsync(string clientId, WebSocket socket, CancellationToken ct);
     Task<List<ChatMessage>> GetMessageHistoryAsync();
+    Task ClearChatAsync();
 }

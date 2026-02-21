@@ -1,237 +1,148 @@
-/*
- * styles.css - Стили для чата
- * 
- * Аналог в PHP: это CSS файл, подключаемый к HTML
- * Используется для оформления элементов интерфейса
- * 
- * В ASP.NET Core (minimal APIs) статические файлы размещаются в папке wwwroot
- * Аналог в PHP: public/css/styles.css
- */
-
-/* 
- * Сброс стилей для всех элементов
- * Аналог в PHP: нет прямого аналога, но можно использовать Normalize.css
- */
 * {
-    box-sizing: border-box;  /* Включает padding и border в ширину/высоту элемента */
-    margin: 0;              /* Убираем внешние отступы */
-    padding: 0;             /* Убираем внутренние отступы */
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-/*
- * Основные стили страницы
- */
 body {
-    font-family: system-ui, -apple-system, sans-serif;  /* Шрифт как в системе */
-    background: #f3f4f6;   /* Светло-серый фон */
-    color: #1f2937;        /* Тёмно-серый текст */
-    line-height: 1.5;      /* Межстрочный интервал */
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #f3f4f6;
+    color: #1f2937;
+    line-height: 1.5;
 }
 
-/*
- * Контейнер для всего чата
- * 
- * max-width: 800px - максимальная ширина (как max-width в CSS)
- * margin: 2rem auto - центрирование (margin: 0 auto в PHP/HTML)
- * padding: 0 1rem - отступы по бокам
- */
 .container {
     max-width: 800px;
     margin: 2rem auto;
     padding: 0 1rem;
 }
 
-/*
- * Заголовок
- */
 h1 {
     text-align: center;
     margin-bottom: 1.5rem;
     color: #111827;
 }
 
-/*
- * Статус соединения
- * 
- * Аналог в PHP: стиль для div#status
- */
 .status {
     padding: 0.5rem 1rem;
     margin-bottom: 1rem;
     border-radius: 8px;
     font-weight: 500;
     text-align: center;
-    transition: background-color 0.2s;  /* Плавная анимация смены цвета */
+    transition: background-color 0.2s;
 }
 
-/* Класс для подключённого состояния */
 .status.connected {
-    background: #dcfce7;  /* Светло-зелёный */
-    color: #166534;       /* Тёмно-зелёный текст */
+    background: #dcfce7;
+    color: #166534;
 }
 
-/* Класс для отключённого состояния */
 .status.disconnected {
-    background: #fee2e2;  /* Светло-красный */
-    color: #991b1b;       /* Тёмно-красный текст */
+    background: #fee2e2;
+    color: #991b1b;
 }
 
-/*
- * Контейнер сообщений
- * 
- * Важные свойства для позиционирования сообщений:
- * - display: flex - включает flexbox
- * - flex-direction: column - элементы располагаются вертикально
- * - gap: 0.5rem - отступ между сообщениями
- * 
- * Аналог в PHP: div#messages
- */
 .messages {
-    height: 400px;                 /* Фиксированная высота */
-    overflow-y: auto;               /* Прокрутка по вертикали */
-    border: 1px solid #e5e7eb;     /* Граница */
-    border-radius: 12px;            /* Скруглённые углы */
-    padding: 1rem;                  /* Внутренний отступ */
-    margin-bottom: 1rem;            /* Отступ снизу */
-    background: #ffffff;            /* Белый фон */
-    
-    /* Flexbox для выравнивания сообщений */
+    height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: #ffffff;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 }
 
-/*
- * Стиль для обычного сообщения
- * 
- * Ключевые свойства для позиционирования:
- * - align-self: flex-start - выравнивает по левому краю (для чужих сообщений)
- * 
- * Аналог в PHP: .message { ... }
- */
 .messages .message {
     padding: 0.5rem 0.75rem;
     border-radius: 8px;
-    background: #f9fafb;           /* Серый фон для чужих сообщений */
-    align-self: flex-start;         /* Выравнивание слева */
-    max-width: 70%;                 /* Максимальная ширина */
-    word-wrap: break-word;         /* Перенос длинных слов */
+    background: #f9fafb;
+    align-self: flex-start;
+    max-width: 70%;
+    word-wrap: break-word;
 }
 
-/*
- * Стиль для системных сообщений
- * 
- * align-self: center - центрирование
- * background: transparent - прозрачный фон
- */
 .messages .message.system {
     color: #6b7280;
-    font-style: italic;             /* Курсив для системных */
-    background: transparent;        /* Без фона */
-    text-align: center;             /* Текст по центру */
-    align-self: center;             /* Сообщение по центру */
-    max-width: 100%;               /* На всю ширину */
+    font-style: italic;
+    background: transparent;
+    text-align: center;
+    align-self: center;
+    max-width: 100%;
 }
 
-/*
- * Стиль для своих сообщений
- * 
- * Ключевые свойства для позиционирования:
- * - align-self: flex-end - выравнивает по правому краю
- * - margin-left: auto - толкает элемент вправо
- * 
- * Аналог в PHP: .message.own { ... }
- */
 .messages .message.own {
-    background: #dbeafe;           /* Синий фон для своих сообщений */
-    align-self: flex-end;           /* Выравнивание справа */
-    margin-left: auto;              /* Сдвиг вправо */
+    background: #dbeafe;
+    align-self: flex-end;
+    margin-left: auto;
 }
 
-/*
- * Область ввода сообщения
- * 
- * Аналог в PHP: div.input-area
- */
 .input-area {
-    display: flex;                 /* Flexbox для горизонтального размещения */
-    gap: 0.5rem;                   /* Отступ между элементами */
-    padding: 1rem;                 /* Внутренний отступ */
-    background: #ffffff;           /* Белый фон */
-    border: 1px solid #e5e7eb;   /* Граница */
-    border-radius: 12px;           /* Скругление */
+    display: flex;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
 }
 
-/*
- * Стили для полей ввода
- * 
- * Аналог в PHP: .input-area input { ... }
- */
 .input-area input {
     padding: 0.5rem 0.75rem;
-    border: 1px solid #d1d5db;    /* Серая граница */
-    border-radius: 8px;            /* Скругление */
-    font-size: 1rem;              /* Размер шрифта */
-    outline: none;                 /* Убираем контур при фокусе */
-    transition: border-color 0.2s; /* Плавная анимация */
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
 }
 
-/* Стиль при фокусе на поле ввода */
 .input-area input:focus {
-    border-color: #3b82f6;        /* Синяя граница при фокусе */
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);  /* Светло-синее свечение */
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* Ширина поля имени */
 .input-area #name {
     width: 120px;
-    flex-shrink: 0;               /* Не сжимать при изменении размера */
+    flex-shrink: 0;
 }
 
-/* Поле сообщения занимает всё доступное пространство */
 .input-area #message {
-    flex: 1;                      /* flex-grow: 1 - расширяется */
+    flex: 1;
 }
 
-/*
- * Стиль для кнопки отправки
- * 
- * Аналог в PHP: .input-area button { ... }
- */
 .input-area button {
     padding: 0.5rem 1.5rem;
-    background: #3b82f6;           /* Синий фон */
-    color: white;                  /* Белый текст */
-    border: none;                   /* Без границы */
-    border-radius: 8px;            /* Скругление */
-    font-weight: 500;             /* Полужирный */
-    cursor: pointer;               /* Курсор "рука" */
-    transition: background 0.2s;  /* Анимация */
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
 }
 
-/* При наведении (если кнопка активна) */
 .input-area button:hover:not(:disabled) {
-    background: #2563eb;          /* Тёмно-синий при наведении */
+    background: #2563eb;
 }
 
-/* Заблокированная кнопка */
 .input-area button:disabled {
-    background: #9ca3af;          /* Серый фон */
-    cursor: not-allowed;           /* Курсор "запрещено" */
+    background: #9ca3af;
+    cursor: not-allowed;
 }
 
-/*
- * Адаптивные стили для мобильных устройств
- * 
- * Аналог в PHP: @media (max-width: 600px) { ... }
- */
+.input-area #clearBtn {
+    background: #ef4444;
+}
+.input-area #clearBtn:hover:not(:disabled) {
+    background: #dc2626;
+}
+
 @media (max-width: 600px) {
-    /* Вертикальное расположение элементов ввода на маленьких экранах */
     .input-area {
         flex-direction: column;
     }
     
-    /* Поле имени на всю ширину */
     .input-area #name {
         width: 100%;
     }

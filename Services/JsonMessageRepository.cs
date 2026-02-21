@@ -45,4 +45,18 @@ public class JsonMessageRepository : IMessageRepository
             }
         });
     }
+
+    public async Task ClearAsync()
+    {
+        await Task.Run(() =>
+        {
+            lock (_lock)
+            {
+                if (File.Exists(_filePath))
+                {
+                    File.WriteAllText(_filePath, "[]");
+                }
+            }
+        });
+    }
 }
