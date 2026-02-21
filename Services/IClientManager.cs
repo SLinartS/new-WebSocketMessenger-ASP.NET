@@ -11,6 +11,7 @@ public interface IClientManager
     void AddClient(string id, WebSocket socket, string ipAddress);
     void RemoveClient(string id);
     void UpdateUserNickname(string id, string nickname);
+    void UpdateUserTypingStatus(string id, bool isTyping);
     IReadOnlyDictionary<string, WebSocket> GetAllClients();
     WebSocket? GetClient(string id);
     IEnumerable<ActiveUser> GetActiveUsers();

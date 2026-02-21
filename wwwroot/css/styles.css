@@ -132,6 +132,17 @@ h1 {
     transition: background 0.2s;
 }
 
+.input-area button {
+    padding: 0.5rem 1.5rem;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
 .input-area button:hover:not(:disabled) {
     background: #2563eb;
 }
@@ -219,6 +230,33 @@ h1 {
     padding-top: 0.5rem;
     border-top: 1px solid #e5e7eb;
     text-align: center;
+}
+
+/* Typing Indicator Styles */
+.typing-indicator {
+    height: 24px;
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-style: italic;
+    text-align: center;
+    line-height: 24px;
+    overflow: hidden;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.typing-indicator:not(:empty) {
+    visibility: visible;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
 }
 
 @media (max-width: 900px) {

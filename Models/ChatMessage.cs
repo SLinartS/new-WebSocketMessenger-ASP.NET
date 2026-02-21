@@ -13,6 +13,9 @@ public class ChatMessage
     [JsonPropertyName("type")]
     public string Type { get; set; } = "message";
 
+    [JsonPropertyName("isTyping")]
+    public bool IsTyping { get; set; }
+
     public static ChatMessage Create(string text, string name) =>
         new() { Text = text, Name = name, Type = "message" };
 

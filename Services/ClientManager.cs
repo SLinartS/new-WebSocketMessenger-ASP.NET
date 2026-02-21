@@ -43,6 +43,15 @@ public class ClientManager : IClientManager
         }
     }
 
+    public void UpdateUserTypingStatus(string id, bool isTyping)
+    {
+        if (_users.TryGetValue(id, out var user))
+        {
+            user.IsTyping = isTyping;
+            RaiseUsersChanged("updated", user);
+        }
+    }
+
     public IReadOnlyDictionary<string, WebSocket> GetAllClients() => _clients;
     
     public WebSocket? GetClient(string id) => 

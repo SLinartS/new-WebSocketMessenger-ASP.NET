@@ -85,7 +85,8 @@ public class ChatService : IChatService
         {
             id = u.Id,
             nickname = u.Nickname,
-            ipAddress = u.IpAddress
+            ipAddress = u.IpAddress,
+            isTyping = u.IsTyping
         }).ToList();
         var message = new { type = "usersList", users };
         var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
@@ -108,6 +109,33 @@ public class ChatService : IChatService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error sending users list to client {ClientId}", id);
+            }
+        }
+    }
+
+    public async Task BroadcastTypingStatusAsync(string userId, string nickname, bool isTyping)
+    {
+        var message = new { type = "typing", userId, nickname, isTyping };
+        var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        var json = JsonSerializer.Serialize(message, options);
+        var bytes = Encoding.UTF8.GetBytes(json);
+
+        foreach (var (id, client) in _clientManager.GetAllClients())
+        {
+            if (id == userId || client.State != WebSocketState.Open)
+                continue;
+
+            try
+            {
+                await client.SendAsync(
+                    new ArraySegment<byte>(bytes),
+                    WebSocketMessageType.Text,
+                    true,
+                    CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending typing status to client {ClientId}", id);
             }
         }
     }
@@ -163,6 +191,13 @@ public class ChatService : IChatService
                         // Update nickname without sending a message
                         var nickname = message.Name ?? "Anonymous";
                         _clientManager.UpdateUserNickname(clientId, nickname);
+                    }
+                    else if (message?.Type == "typing")
+                    {
+                        // Update typing status
+                        var nickname = message.Name ?? "Anonymous";
+                        _clientManager.UpdateUserTypingStatus(clientId, message.IsTyping);
+                        await BroadcastTypingStatusAsync(clientId, nickname, message.IsTyping);
                     }
                 }
             }

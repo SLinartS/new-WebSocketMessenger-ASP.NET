@@ -5,12 +5,15 @@ const elements = {
     message: document.getElementById('message'),
     sendBtn: document.getElementById('sendBtn'),
     clearBtn: document.getElementById('clearBtn'),
-    usersList: document.getElementById('usersList')
+    usersList: document.getElementById('usersList'),
+    typingIndicator: document.getElementById('typingIndicator')
 };
 
 let ws = null;
 let isConnected = false;
 let userId = null;
+let typingTimeout = null;
+let typingUsers = new Map();
 
 function init() {
     userId = getOrCreateUserId();
@@ -75,6 +78,13 @@ function onMessage(event) {
         // Handle users list message
         if (type === 'usersList') {
             renderUsersList(data.users);
+            updateTypingUsersFromList(data.users);
+            return;
+        }
+        
+        // Handle typing status message
+        if (type === 'typing') {
+            updateTypingIndicator(data.userId, data.nickname, data.isTyping);
             return;
         }
         
@@ -85,8 +95,8 @@ function onMessage(event) {
         
         if (!text) return;
         
-        const displayText = type === 'system' 
-            ? text 
+        const displayText = type === 'system'
+            ? text
             : `${name}: ${text}`;
             
         const isOwn = name === getCurrentUserName() || name === elements.name.value.trim();
@@ -165,6 +175,10 @@ function setupEventListeners() {
         if (e.key === 'Enter') sendMessage();
     });
     
+    elements.message.addEventListener('input', () => {
+        sendTypingStatus();
+    });
+    
     elements.name.addEventListener('change', () => {
         saveUserName(elements.name.value.trim());
         sendNickname();
@@ -229,6 +243,75 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function sendTypingStatus() {
+    if (!isConnected || !ws || ws.readyState !== WebSocket.OPEN) return;
+    
+    const name = elements.name.value.trim() || 'Anonymous';
+    const payload = { name, type: 'typing', isTyping: true };
+    
+    ws.send(JSON.stringify(payload));
+    
+    // Clear existing timeout
+    if (typingTimeout) {
+        clearTimeout(typingTimeout);
+    }
+    
+    // Set timeout to stop typing indicator after 2 seconds
+    typingTimeout = setTimeout(() => {
+        const stopPayload = { name, type: 'typing', isTyping: false };
+        ws.send(JSON.stringify(stopPayload));
+    }, 2000);
+}
+
+function updateTypingIndicator(typingUserId, nickname, isTyping) {
+    // Don't show own typing status
+    if (typingUserId === userId) return;
+    
+    if (isTyping) {
+        typingUsers.set(typingUserId, nickname);
+    } else {
+        typingUsers.delete(typingUserId);
+    }
+    
+    renderTypingIndicator();
+}
+
+function renderTypingIndicator() {
+    if (!elements.typingIndicator) return;
+    
+    const typingUsersArray = Array.from(typingUsers.values());
+    
+    if (typingUsersArray.length === 0) {
+        elements.typingIndicator.textContent = '';
+        return;
+    }
+    
+    let text;
+    if (typingUsersArray.length === 1) {
+        text = `${typingUsersArray[0]} is typing...`;
+    } else if (typingUsersArray.length === 2) {
+        text = `${typingUsersArray[0]} and ${typingUsersArray[1]} are typing...`;
+    } else {
+        text = `${typingUsersArray.length} users typing...`;
+    }
+    
+    elements.typingIndicator.textContent = text;
+}
+
+function updateTypingUsersFromList(users) {
+    // Clear current typing users
+    typingUsers.clear();
+    
+    // Add users who are currently typing (excluding self)
+    users.forEach(user => {
+        if (user.id !== userId && user.isTyping) {
+            typingUsers.set(user.id, user.nickname);
+        }
+    });
+    
+    renderTypingIndicator();
 }
 
 document.addEventListener('DOMContentLoaded', init);

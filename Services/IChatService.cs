@@ -11,4 +11,5 @@ public interface IChatService
     Task<List<ChatMessage>> GetMessageHistoryAsync();
     Task ClearChatAsync();
     Task BroadcastUsersListAsync();
+    Task BroadcastTypingStatusAsync(string userId, string nickname, bool isTyping);
 }
