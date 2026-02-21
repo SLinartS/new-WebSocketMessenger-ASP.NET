@@ -123,7 +123,6 @@ public class ChatService : IChatService
         }
 
         await BroadcastUsersListAsync();
-        await BroadcastAsync(ChatMessage.System($"User {clientId} connected"));
 
         _logger.LogInformation("Client connected: {ClientId} from {IpAddress}", clientId, ipAddress);
 
@@ -184,7 +183,6 @@ public class ChatService : IChatService
         {
             _clientManager.RemoveClient(clientId);
             await BroadcastUsersListAsync();
-            await BroadcastAsync(ChatMessage.System($"{clientId} disconnected"));
 
             if (socket.State == WebSocketState.Open)
                 await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closed", ct);

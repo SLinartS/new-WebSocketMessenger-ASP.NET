@@ -50,7 +50,6 @@ function connect() {
 function onConnected() {
     isConnected = true;
     updateStatus('Connected', true);
-    addMessage('You joined the chat!', 'system');
     
     // Send nickname to server immediately after connection
     sendNickname();
