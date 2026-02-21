@@ -1,0 +1,49 @@
+<!--
+ * index.html - Главная страница чата
+ * 
+ * Аналог в PHP: это обычный HTML шаблон (blade, twig, и т.д.)
+ * Статический файл, который отдаётся сервером как есть
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Chat</title>
+    <!-- Подключение CSS файла -->
+    <!-- Аналог в PHP: <link rel="stylesheet" href="/css/styles.css"> -->
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Статус соединения -->
+        <!-- Аналог в PHP: отображается через JavaScript, как и всё динамическое -->
+        <div id="status" class="status disconnected">Disconnected</div>
+
+        <!-- Контейнер для сообщений -->
+        <!-- Сюда JavaScript добавляет новые сообщения -->
+        <div id="messages" class="messages"></div>
+
+        <!-- Область ввода -->
+        <div class="input-area">
+            <!-- Поле для имени пользователя -->
+            <input id="name" type="text" placeholder="Your name" maxlength="20">
+            
+            <!-- Поле для текста сообщения -->
+            <input id="message" type="text" placeholder="Message..." maxlength="500">
+            
+            <!-- Кнопка отправки -->
+            <button id="sendBtn" disabled>Send</button>
+        </div>
+    </div>
+
+    <!-- Подключение JavaScript файла -->
+    <!-- Аналог в PHP: <script src="/js/app.js"></script> -->
+    <script src="/js/app.js"></script>
+</body>
+
+</html>
+
