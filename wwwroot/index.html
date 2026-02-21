@@ -12,16 +12,25 @@
     <div class="container">
         <div id="status" class="status disconnected">Disconnected</div>
 
-        <div id="messages" class="messages"></div>
+        <div class="chat-wrapper">
+            <div class="chat-main">
+                <div id="messages" class="messages"></div>
 
-        <div class="input-area">
-            <input id="name" type="text" placeholder="Your name" maxlength="20">
-            
-            <input id="message" type="text" placeholder="Message..." maxlength="500">
-            
-            <button id="sendBtn" disabled>Send</button>
-            
-            <button id="clearBtn" disabled>Clear</button>
+                <div class="input-area">
+                    <input id="name" type="text" placeholder="Your name" maxlength="20">
+                    
+                    <input id="message" type="text" placeholder="Message..." maxlength="500">
+                    
+                    <button id="sendBtn" disabled>Send</button>
+                    
+                    <button id="clearBtn" disabled>Clear</button>
+                </div>
+            </div>
+
+            <div class="users-panel">
+                <h3 class="users-panel-title">Active Users</h3>
+                <div id="usersList" class="users-list"></div>
+            </div>
         </div>
     </div>
 
@@ -29,4 +38,3 @@
 </body>
 
 </html>
-

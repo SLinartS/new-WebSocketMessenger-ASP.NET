@@ -4,23 +4,40 @@ const elements = {
     name: document.getElementById('name'),
     message: document.getElementById('message'),
     sendBtn: document.getElementById('sendBtn'),
-    clearBtn: document.getElementById('clearBtn')
+    clearBtn: document.getElementById('clearBtn'),
+    usersList: document.getElementById('usersList')
 };
 
 let ws = null;
 let isConnected = false;
+let userId = null;
 
 function init() {
+    userId = getOrCreateUserId();
     connect();
     setupEventListeners();
     loadUserName();
 }
 
+function getOrCreateUserId() {
+    let id = localStorage.getItem('chatUserId');
+    if (!id) {
+        id = generateUuid();
+        localStorage.setItem('chatUserId', id);
+    }
+    return id;
+}
+
+function generateUuid() {
+    // Generate short 8-character ID
+    return Math.random().toString(36).substring(2, 10);
+}
+
 function connect() {
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const url = `${protocol}//${location.host}/ws`;
+    const url = `${protocol}//${location.host}/ws?userId=${userId}`;
     
-    console.log('Connecting to', url);
+    console.log('Connecting to', url, 'with userId', userId);
     
     ws = new WebSocket(url);
     
@@ -34,6 +51,18 @@ function onConnected() {
     isConnected = true;
     updateStatus('Connected', true);
     addMessage('You joined the chat!', 'system');
+    
+    // Send nickname to server immediately after connection
+    sendNickname();
+}
+
+function sendNickname() {
+    if (!isConnected || !ws || ws.readyState !== WebSocket.OPEN) return;
+    
+    const name = elements.name.value.trim() || 'Anonymous';
+    const payload = { name, text: '', type: 'nickname' };
+    
+    ws.send(JSON.stringify(payload));
 }
 
 function onMessage(event) {
@@ -43,6 +72,12 @@ function onMessage(event) {
         const name = data.name ?? data.Name ?? 'Anonymous';
         const text = data.text ?? data.Text ?? '';
         const type = data.type ?? data.Type ?? 'message';
+        
+        // Handle users list message
+        if (type === 'usersList') {
+            renderUsersList(data.users);
+            return;
+        }
         
         if (type === 'clear') {
             clearMessages();
@@ -70,6 +105,11 @@ function onDisconnected(event) {
     
     const reason = event.reason ? ': ' + event.reason : '';
     addMessage(`Connection closed${reason}`, 'system');
+    
+    // Clear users list on disconnect
+    if (elements.usersList) {
+        elements.usersList.innerHTML = '<div class="users-count">No active users</div>';
+    }
     
     setTimeout(() => {
         if (!isConnected) {
@@ -128,6 +168,7 @@ function setupEventListeners() {
     
     elements.name.addEventListener('change', () => {
         saveUserName(elements.name.value.trim());
+        sendNickname();
     });
     
     elements.clearBtn.addEventListener('click', clearChat);
@@ -164,5 +205,31 @@ function loadUserName() {
     }   
 }
 
-document.addEventListener('DOMContentLoaded', init);
+function renderUsersList(users) {
+    if (!elements.usersList) return;
+    
+    if (!users || users.length === 0) {
+        elements.usersList.innerHTML = '<div class="users-count">No active users</div>';
+        return;
+    }
+    
+    const html = users.map(user => `
+        <div class="user-item">
+            <div class="user-nickname">${escapeHtml(user.nickname || 'Anonymous')}</div>
+            <div class="user-details">
+                <span class="user-ip">${escapeHtml(user.ipAddress || 'unknown')}</span>
+                <span class="user-id">ID: ${escapeHtml(user.id || '')}</span>
+            </div>
+        </div>
+    `).join('');
+    
+    elements.usersList.innerHTML = html + `<div class="users-count">${users.length} user(s) online</div>`;
+}
 
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+document.addEventListener('DOMContentLoaded', init);

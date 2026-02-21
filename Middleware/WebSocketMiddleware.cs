@@ -32,8 +32,29 @@ public class WebSocketMiddleware
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
         
         using var ws = await context.WebSockets.AcceptWebSocketAsync();
-        var clientId = Guid.NewGuid().ToString()[..8];
         
-        await _chatService.HandleClientAsync(clientId, ws, cts.Token);
+        var clientId = context.Request.Query["userId"].FirstOrDefault();
+        if (string.IsNullOrEmpty(clientId))
+        {
+            clientId = Guid.NewGuid().ToString()[..8];
+        }
+        
+        var ipAddress = GetIpAddress(context.Connection.RemoteIpAddress);
+        
+        await _chatService.HandleClientAsync(clientId, ws, ipAddress, cts.Token);
+    }
+    
+    private static string GetIpAddress(System.Net.IPAddress? address)
+    {
+        if (address == null) return "unknown";
+        
+        var ipString = address.ToString();
+        
+        if (ipString.StartsWith("::ffff:"))
+        {
+            return ipString.Substring(7);
+        }
+        
+        return ipString;
     }
 }
