@@ -8,6 +8,7 @@ builder.WebHost.ConfigureKestrel(options =>
     options.ListenAnyIP(5237);
 });
 
+builder.Services.AddControllers();
 builder.Services.AddSingleton<IClientManager, ClientManager>();
 builder.Services.AddSingleton<IMessageRepository, JsonMessageRepository>();
 builder.Services.AddSingleton<IChatService, ChatService>();
@@ -17,6 +18,8 @@ var app = builder.Build();
 app.UseWebSockets();
 app.UseStaticFiles();
 app.UseMiddleware<WebSocketMiddleware>();
+
+app.MapControllers();
 
 app.MapGet("/", () => Results.Redirect("/index.html"));
 

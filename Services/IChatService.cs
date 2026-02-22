@@ -12,4 +12,8 @@ public interface IChatService
     Task ClearChatAsync();
     Task BroadcastUsersListAsync();
     Task BroadcastTypingStatusAsync(string userId, string nickname, bool isTyping);
+    Task BroadcastChatUpdateAsync(string chatRoomId, List<ChatMessage> messages, List<OnlineUser> onlineUsers);
+    Task<List<OnlineUser>> GetOnlineUsersByChatAsync(string chatRoomId);
+    Task BroadcastToChatAsync(string chatRoomId, ChatMessage message, string? excludeClientId = null);
+    Task<List<ChatMessage>> GetMessagesByChatAsync(string chatRoomId);
 }

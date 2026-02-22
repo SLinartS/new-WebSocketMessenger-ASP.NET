@@ -52,12 +52,24 @@ public class ClientManager : IClientManager
         }
     }
 
+    public void UpdateUserCurrentChat(string id, string chatRoomId)
+    {
+        if (_users.TryGetValue(id, out var user))
+        {
+            user.CurrentChatId = chatRoomId;
+            RaiseUsersChanged("updated", user);
+        }
+    }
+
     public IReadOnlyDictionary<string, WebSocket> GetAllClients() => _clients;
     
-    public WebSocket? GetClient(string id) => 
+    public WebSocket? GetClient(string id) =>
         _clients.TryGetValue(id, out var client) ? client : null;
     
     public IEnumerable<ActiveUser> GetActiveUsers() => _users.Values.ToList();
+    
+    public ActiveUser? GetUser(string id) =>
+        _users.TryGetValue(id, out var user) ? user : null;
 
     private void RaiseUsersChanged(string type, ActiveUser user)
     {
