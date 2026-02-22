@@ -1,14 +1,14 @@
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
-using System.Linq;
 using SimpleMessenger.Models;
-using Microsoft.Extensions.Logging;
 
 namespace SimpleMessenger.Services;
 
 public class ChatService : IChatService
 {
+    private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
     private readonly IClientManager _clientManager;
     private readonly IMessageRepository _messageRepository;
     private readonly ILogger<ChatService> _logger;
@@ -89,8 +89,7 @@ public class ChatService : IChatService
             isTyping = u.IsTyping
         }).ToList();
         var message = new { type = "usersList", users };
-        var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-        var json = JsonSerializer.Serialize(message, options);
+        var json = JsonSerializer.Serialize(message, _jsonOptions);
         var bytes = Encoding.UTF8.GetBytes(json);
 
         foreach (var (id, client) in _clientManager.GetAllClients())
@@ -116,8 +115,7 @@ public class ChatService : IChatService
     public async Task BroadcastTypingStatusAsync(string userId, string nickname, bool isTyping)
     {
         var message = new { type = "typing", userId, nickname, isTyping };
-        var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-        var json = JsonSerializer.Serialize(message, options);
+        var json = JsonSerializer.Serialize(message, _jsonOptions);
         var bytes = Encoding.UTF8.GetBytes(json);
 
         foreach (var (id, client) in _clientManager.GetAllClients())

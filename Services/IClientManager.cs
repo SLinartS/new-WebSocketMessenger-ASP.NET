@@ -1,5 +1,4 @@
 using System.Net.WebSockets;
-using System.Collections.Concurrent;
 using SimpleMessenger.Models;
 
 namespace SimpleMessenger.Services;
@@ -7,7 +6,7 @@ namespace SimpleMessenger.Services;
 public interface IClientManager
 {
     event Action<UserChangedEventArgs>? UsersChanged;
-    
+
     void AddClient(string id, WebSocket socket, string ipAddress);
     void RemoveClient(string id);
     void UpdateUserNickname(string id, string nickname);

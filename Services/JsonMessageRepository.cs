@@ -6,7 +6,7 @@ namespace SimpleMessenger.Services;
 public class JsonMessageRepository : IMessageRepository
 {
     private readonly string _filePath;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true
@@ -36,7 +36,7 @@ public class JsonMessageRepository : IMessageRepository
         messages.Add(message);
 
         var json = JsonSerializer.Serialize(messages, JsonOptions);
-        
+
         await Task.Run(() =>
         {
             lock (_lock)
