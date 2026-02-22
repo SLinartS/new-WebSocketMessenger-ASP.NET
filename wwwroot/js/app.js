@@ -126,15 +126,13 @@ function onMessage(event) {
 
         if (!text) return;
 
+        const timestamp = data.timestamp ?? data.Timestamp ?? null;
+
         // Only show message if it's in current chat
         if (data.chatRoomId === currentChatId || !data.chatRoomId) {
-            const displayText = type === 'system'
-                ? text
-                : `${name}: ${text}`;
-
             const isOwn = name === getCurrentUserName() || name === elements.name.value.trim();
 
-            addMessage(displayText, type, isOwn);
+            addMessage(text, type, isOwn, name, timestamp);
         }
 
     } catch (err) {
@@ -178,12 +176,42 @@ function onError(error) {
     addMessage('Connection error', 'system');
 }
 
-function addMessage(text, type, isOwn = false) {
+function addMessage(text, type, isOwn = false, name = null, timestamp = null) {
     const div = document.createElement('div');
     div.className = `message ${type} ${isOwn ? 'own' : ''}`;
-    div.textContent = text;
+
+    if (type === 'system') {
+        // System messages: just text
+        div.textContent = text;
+    } else {
+        // Regular messages: name, text, time
+        const nameText = name ?? 'Anonymous';
+        const timeText = timestamp ? formatTime(timestamp) : '';
+
+        div.innerHTML = `
+            <div class="message-header">
+                <span class="message-name">${escapeHtml(nameText)}</span>
+                ${timeText ? `<span class="message-time">${timeText}</span>` : ''}
+            </div>
+            <div class="message-text">${escapeHtml(text)}</div>
+        `;
+    }
+
     elements.messages.appendChild(div);
     elements.messages.scrollTop = elements.messages.scrollHeight;
+}
+
+function formatTime(timestamp) {
+    const date = new Date(timestamp);
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 function renderMessages(messages) {
@@ -194,16 +222,13 @@ function renderMessages(messages) {
         const name = msg.name ?? 'Anonymous';
         const text = msg.text ?? '';
         const type = msg.type ?? 'message';
+        const timestamp = msg.timestamp ?? null;
 
         if (!text) return;
 
-        const displayText = type === 'system'
-            ? text
-            : `${name}: ${text}`;
-
         const isOwn = name === getCurrentUserName() || name === elements.name.value.trim();
 
-        addMessage(displayText, type, isOwn);
+        addMessage(text, type, isOwn, name, timestamp);
     });
 }
 
@@ -217,7 +242,7 @@ function sendMessage() {
 
     const payload = { name, text, type: 'message', chatRoomId: currentChatId };
 
-    addMessage(`${name}: ${text}`, 'message', true);
+    addMessage(text, 'message', true, name);
 
     ws.send(JSON.stringify(payload));
 

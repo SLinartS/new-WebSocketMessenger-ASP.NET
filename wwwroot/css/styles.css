@@ -66,27 +66,79 @@ h1 {
 }
 
 .messages .message {
-    padding: 0.5rem 0.75rem;
-    border-radius: 8px;
-    background: #f9fafb;
+    padding: 0.4rem 0.5rem;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
     align-self: flex-start;
     max-width: 70%;
     word-wrap: break-word;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    box-sizing: border-box;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .messages .message.system {
     color: #6b7280;
     font-style: italic;
     background: transparent;
+    border: none;
     text-align: center;
     align-self: center;
     max-width: 100%;
+    box-shadow: none;
 }
 
 .messages .message.own {
-    background: #dbeafe;
+    background: #eff6ff;
+    border-color: #bfdbfe;
     align-self: flex-end;
     margin-left: auto;
+}
+
+.messages .message .message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.25rem;
+    padding-bottom: 0.2rem;
+    border-bottom: 1px solid #d2d2d28b;
+}
+
+.messages .message .message-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #2563eb;
+    letter-spacing: 0.02em;
+    padding-right: 0.3rem;
+}
+
+.messages .message.own .message-name {
+    color: #1d4ed8;
+}
+
+.messages .message .message-text {
+    font-size: 1rem;
+    color: #1f2937;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+.messages .message .message-time {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+.messages .message.own .message-time {
+    color: #6b7280;
+}
+
+.messages .message.system .message-text {
+    font-size: 0.9rem;
 }
 
 .input-area {
@@ -155,6 +207,7 @@ h1 {
 .input-area #clearBtn {
     background: #ef4444;
 }
+
 .input-area #clearBtn:hover:not(:disabled) {
     background: #dc2626;
 }
@@ -251,9 +304,12 @@ h1 {
 }
 
 @keyframes pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 1;
     }
+
     50% {
         opacity: 0.6;
     }
@@ -263,7 +319,7 @@ h1 {
     .chat-wrapper {
         flex-direction: column;
     }
-    
+
     .users-panel {
         width: 100%;
         max-height: none;
@@ -274,7 +330,7 @@ h1 {
     .input-area {
         flex-direction: column;
     }
-    
+
     .input-area #name {
         width: 100%;
     }
@@ -424,15 +480,15 @@ h1 {
     .chat-wrapper {
         flex-direction: column;
     }
-    
+
     .sidebar {
         width: 100%;
     }
-    
+
     .chat-list-panel {
         max-height: 150px;
     }
-    
+
     .users-panel {
         width: 100%;
         max-height: none;
@@ -443,15 +499,15 @@ h1 {
     .input-area {
         flex-direction: column;
     }
-    
+
     .input-area #name {
         width: 100%;
     }
-    
+
     .find-user-panel {
         flex-direction: column;
     }
-    
+
     .find-user-panel button {
         width: 100%;
     }
