@@ -22,16 +22,33 @@ public class JsonMessageRepository : IMessageRepository
         _chatParticipantsFilePath = Path.Combine(directory, "chat_participants.json");
     }
 
+    private async Task<T?> LoadJsonFileAsync<T>(string filePath)
+    {
+        if (!File.Exists(filePath))
+            return default;
+
+        var json = await File.ReadAllTextAsync(filePath);
+        if (string.IsNullOrWhiteSpace(json))
+            return default;
+
+        return JsonSerializer.Deserialize<T>(json);
+    }
+
+    private async Task SaveJsonFileAsync<T>(string filePath, T data)
+    {
+        var json = JsonSerializer.Serialize(data, JsonOptions);
+        await Task.Run(() =>
+        {
+            lock (_lock)
+            {
+                File.WriteAllText(filePath, json);
+            }
+        });
+    }
+
     public async Task<List<ChatMessage>> GetAllAsync()
     {
-        if (!File.Exists(_filePath))
-            return new List<ChatMessage>();
-
-        var json = await File.ReadAllTextAsync(_filePath);
-        if (string.IsNullOrWhiteSpace(json))
-            return new List<ChatMessage>();
-
-        return JsonSerializer.Deserialize<List<ChatMessage>>(json) ?? new List<ChatMessage>();
+        return await LoadJsonFileAsync<List<ChatMessage>>(_filePath) ?? new List<ChatMessage>();
     }
 
     public async Task<List<ChatMessage>> GetMessagesByChatAsync(string chatRoomId)
@@ -44,131 +61,57 @@ public class JsonMessageRepository : IMessageRepository
     {
         var messages = await GetAllAsync();
         messages.Add(message);
-
-        var json = JsonSerializer.Serialize(messages, JsonOptions);
-
-        await Task.Run(() =>
-        {
-            lock (_lock)
-            {
-                File.WriteAllText(_filePath, json);
-            }
-        });
+        await SaveJsonFileAsync(_filePath, messages);
     }
 
     public async Task ClearAsync()
     {
-        await Task.Run(() =>
-        {
-            lock (_lock)
-            {
-                if (File.Exists(_filePath))
-                {
-                    File.WriteAllText(_filePath, "[]");
-                }
-            }
-        });
+        await SaveJsonFileAsync(_filePath, new List<ChatMessage>());
     }
 
     public async Task ClearMessagesByChatAsync(string chatRoomId)
     {
         var messages = await GetAllAsync();
         var remainingMessages = messages.Where(m => m.ChatRoomId != chatRoomId).ToList();
-
-        await Task.Run(() =>
-        {
-            lock (_lock)
-            {
-                var json = JsonSerializer.Serialize(remainingMessages, JsonOptions);
-                File.WriteAllText(_filePath, json);
-            }
-        });
+        await SaveJsonFileAsync(_filePath, remainingMessages);
     }
 
     public async Task<List<ChatRoom>> GetChatRoomsAsync()
     {
-        if (!File.Exists(_chatRoomsFilePath))
-            return new List<ChatRoom>();
-
-        var json = await File.ReadAllTextAsync(_chatRoomsFilePath);
-        if (string.IsNullOrWhiteSpace(json))
-            return new List<ChatRoom>();
-
-        return JsonSerializer.Deserialize<List<ChatRoom>>(json) ?? new List<ChatRoom>();
+        return await LoadJsonFileAsync<List<ChatRoom>>(_chatRoomsFilePath) ?? new List<ChatRoom>();
     }
 
     public async Task AddChatRoomAsync(ChatRoom chatRoom)
     {
         var chatRooms = await GetChatRoomsAsync();
         chatRooms.Add(chatRoom);
-
-        var json = JsonSerializer.Serialize(chatRooms, JsonOptions);
-
-        await Task.Run(() =>
-        {
-            lock (_lock)
-            {
-                File.WriteAllText(_chatRoomsFilePath, json);
-            }
-        });
+        await SaveJsonFileAsync(_chatRoomsFilePath, chatRooms);
     }
 
     public async Task RemoveChatRoomAsync(string chatRoomId)
     {
         var chatRooms = await GetChatRoomsAsync();
         var remainingChatRooms = chatRooms.Where(c => c.Id != chatRoomId).ToList();
-
-        await Task.Run(() =>
-        {
-            lock (_lock)
-            {
-                var json = JsonSerializer.Serialize(remainingChatRooms, JsonOptions);
-                File.WriteAllText(_chatRoomsFilePath, json);
-            }
-        });
+        await SaveJsonFileAsync(_chatRoomsFilePath, remainingChatRooms);
     }
 
     public async Task<List<ChatParticipant>> GetChatParticipantsAsync()
     {
-        if (!File.Exists(_chatParticipantsFilePath))
-            return new List<ChatParticipant>();
-
-        var json = await File.ReadAllTextAsync(_chatParticipantsFilePath);
-        if (string.IsNullOrWhiteSpace(json))
-            return new List<ChatParticipant>();
-
-        return JsonSerializer.Deserialize<List<ChatParticipant>>(json) ?? new List<ChatParticipant>();
+        return await LoadJsonFileAsync<List<ChatParticipant>>(_chatParticipantsFilePath) ?? new List<ChatParticipant>();
     }
 
     public async Task AddChatParticipantAsync(ChatParticipant participant)
     {
         var participants = await GetChatParticipantsAsync();
         participants.Add(participant);
-
-        var json = JsonSerializer.Serialize(participants, JsonOptions);
-
-        await Task.Run(() =>
-        {
-            lock (_lock)
-            {
-                File.WriteAllText(_chatParticipantsFilePath, json);
-            }
-        });
+        await SaveJsonFileAsync(_chatParticipantsFilePath, participants);
     }
 
     public async Task RemoveChatParticipantAsync(string chatRoomId, string userId)
     {
         var participants = await GetChatParticipantsAsync();
         var remainingParticipants = participants.Where(p => p.ChatRoomId != chatRoomId || p.UserId != userId).ToList();
-
-        await Task.Run(() =>
-        {
-            lock (_lock)
-            {
-                var json = JsonSerializer.Serialize(remainingParticipants, JsonOptions);
-                File.WriteAllText(_chatParticipantsFilePath, json);
-            }
-        });
+        await SaveJsonFileAsync(_chatParticipantsFilePath, remainingParticipants);
     }
 
     public async Task<List<ChatParticipant>> GetParticipantsByChatAsync(string chatRoomId)

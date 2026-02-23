@@ -5,29 +5,28 @@ namespace SimpleMessenger.Models;
 public class ChatMessage
 {
     [JsonPropertyName("id")]
-    public string Id { get; set; } = Guid.NewGuid().ToString();
+    public string Id { get; init; } = Guid.NewGuid().ToString();
 
     [JsonPropertyName("chatRoomId")]
-    public string ChatRoomId { get; set; } = "general";
+    public string ChatRoomId { get; init; } = "general";
 
     [JsonPropertyName("userId")]
-    public string? UserId { get; set; }
+    public string? UserId { get; init; }
 
     [JsonPropertyName("name")]
-    public string? Name { get; set; } = "Anonymous";
+    public string? Name { get; init; } = "Anonymous";
 
     [JsonPropertyName("text")]
-    public string? Text { get; set; }
+    public string? Text { get; init; }
 
     [JsonPropertyName("type")]
-    public string Type { get; set; } = "message";
+    public string Type { get; init; } = "message";
 
     [JsonPropertyName("timestamp")]
-    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    public DateTime Timestamp { get; init; } = DateTime.UtcNow;
 
     [JsonPropertyName("isTyping")]
-
-    public bool IsTyping { get; set; }
+    public bool IsTyping { get; init; }
 
     public static ChatMessage Create(string text, string name, string chatRoomId = "general", string? userId = null) =>
         new() { Text = text, Name = name, Type = "message", ChatRoomId = chatRoomId, UserId = userId };

@@ -5,7 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.ListenAnyIP(5237);
+    options.ListenAnyIP(builder.Configuration.GetValue<int>("Server:Port", 5237));
 });
 
 builder.Services.AddControllers();

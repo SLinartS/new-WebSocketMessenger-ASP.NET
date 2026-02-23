@@ -66,7 +66,16 @@ public class ClientManager : IClientManager
     public WebSocket? GetClient(string id) =>
         _clients.TryGetValue(id, out var client) ? client : null;
     
-    public IEnumerable<ActiveUser> GetActiveUsers() => _users.Values.ToList();
+    public IEnumerable<ActiveUser> GetActiveUsers() => 
+        _users.Values.Select(u => new ActiveUser
+        {
+            Id = u.Id,
+            Nickname = u.Nickname,
+            IpAddress = u.IpAddress,
+            ConnectedAt = u.ConnectedAt,
+            IsTyping = u.IsTyping,
+            CurrentChatId = u.CurrentChatId
+        }).ToList();
     
     public ActiveUser? GetUser(string id) =>
         _users.TryGetValue(id, out var user) ? user : null;

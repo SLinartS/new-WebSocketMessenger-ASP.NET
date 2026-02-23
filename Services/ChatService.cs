@@ -7,6 +7,7 @@ namespace SimpleMessenger.Services;
 
 public class ChatService : IChatService
 {
+    private const string DefaultChatRoomId = "general";
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
     private readonly IClientManager _clientManager;
@@ -23,6 +24,67 @@ public class ChatService : IChatService
         _clientManager.UsersChanged += async _ => await BroadcastUsersListAsync();
     }
 
+    private string SerializeMessage(object message) => JsonSerializer.Serialize(message, _jsonOptions);
+
+    private string SanitizeInput(string? input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return input ?? string.Empty;
+        }
+
+        return input.Replace("<", "&lt;")
+                .Replace(">", "&gt;")
+                .Replace("\"", "&quot;")
+                .Replace("'", "&#x27;")
+                .Replace("/", "&#x2F;");
+    }
+
+    private void HandleError(string clientId, Exception ex, string operation)
+    {
+        _logger.LogError(ex, "Error during {Operation} for client {ClientId}", operation, clientId);
+    }
+
+    private void LogRequest(string clientId, string operation, string details = "")
+    {
+        _logger.LogInformation("Request - Client: {ClientId}, Operation: {Operation}, Details: {Details}", clientId, operation, details);
+    }
+
+    private async Task BroadcastToClientsAsync(
+        IEnumerable<(string Id, WebSocket Client)> clients,
+        byte[] messageBytes,
+        string? excludeClientId = null,
+        string? logTemplate = null)
+    {
+        var sentCount = 0;
+
+        foreach (var (id, client) in clients)
+        {
+            if (id == excludeClientId || client.State != WebSocketState.Open)
+            {
+                continue;
+            }
+
+            try
+            {
+                await client.SendAsync(
+                    new ArraySegment<byte>(messageBytes),
+                    WebSocketMessageType.Text,
+                    true,
+                    CancellationToken.None);
+                sentCount++;
+            }
+            catch (Exception ex)
+            {
+                HandleError(id, ex, "BroadcastToClientsAsync");
+                _clientManager.RemoveClient(id);
+            }
+        }
+
+        if (logTemplate != null)
+            _logger.LogInformation(logTemplate, sentCount);
+    }
+
     public async Task<List<ChatMessage>> GetMessageHistoryAsync()
     {
         return await _messageRepository.GetAllAsync();
@@ -37,7 +99,8 @@ public class ChatService : IChatService
     {
         var participants = await _messageRepository.GetParticipantsByChatAsync(chatRoomId);
         var activeUsers = _clientManager.GetActiveUsers().ToList();
-        return activeUsers.Where(u => participants.Any(p => p.UserId == u.Id))
+        var participantIds = new HashSet<string>(participants.Select(p => p.UserId));
+        return activeUsers.Where(u => participantIds.Contains(u.Id))
             .Select(u => new OnlineUser
             {
                 Id = u.Id,
@@ -64,7 +127,9 @@ public class ChatService : IChatService
         var client = _clientManager.GetClient(clientId);
         if (client?.State != WebSocketState.Open) return;
 
-        var json = JsonSerializer.Serialize(message);
+        LogRequest(clientId, "SendMessage", $"Message type: {message.Type}");
+
+        var json = SerializeMessage(message);
         var bytes = Encoding.UTF8.GetBytes(json);
 
         await client.SendAsync(
@@ -76,7 +141,7 @@ public class ChatService : IChatService
 
     public async Task BroadcastAsync(ChatMessage message, string? excludeClientId = null)
     {
-        var json = JsonSerializer.Serialize(message);
+        var json = SerializeMessage(message);
         var bytes = Encoding.UTF8.GetBytes(json);
         var sentCount = 0;
 
@@ -96,7 +161,7 @@ public class ChatService : IChatService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error sending to client {ClientId}", id);
+                HandleError(id, ex, "BroadcastAsync");
                 _clientManager.RemoveClient(id);
             }
         }
@@ -107,7 +172,7 @@ public class ChatService : IChatService
     public async Task BroadcastToChatAsync(string chatRoomId, ChatMessage message, string? excludeClientId = null)
     {
         var participants = await _messageRepository.GetParticipantsByChatAsync(chatRoomId);
-        var json = JsonSerializer.Serialize(message);
+        var json = SerializeMessage(message);
         var bytes = Encoding.UTF8.GetBytes(json);
         var sentCount = 0;
 
@@ -130,7 +195,7 @@ public class ChatService : IChatService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error sending to client {ClientId}", participant.UserId);
+                HandleError(participant.UserId, ex, "BroadcastToChatAsync");
                 _clientManager.RemoveClient(participant.UserId);
             }
         }
@@ -148,7 +213,7 @@ public class ChatService : IChatService
             isTyping = u.IsTyping
         }).ToList();
         var message = new { type = "usersList", users };
-        var json = JsonSerializer.Serialize(message, _jsonOptions);
+        var json = SerializeMessage(message);
         var bytes = Encoding.UTF8.GetBytes(json);
 
         foreach (var (id, client) in _clientManager.GetAllClients())
@@ -166,7 +231,7 @@ public class ChatService : IChatService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error sending users list to client {ClientId}", id);
+                HandleError(id, ex, "BroadcastUsersListAsync");
             }
         }
     }
@@ -182,7 +247,7 @@ public class ChatService : IChatService
         }).ToList();
 
         var chatMessage = new { type = "chatUpdate", chatRoomId, messages, users };
-        var json = JsonSerializer.Serialize(chatMessage, _jsonOptions);
+        var json = SerializeMessage(chatMessage);
         var bytes = Encoding.UTF8.GetBytes(json);
 
         var participants = await _messageRepository.GetParticipantsByChatAsync(chatRoomId);
@@ -201,7 +266,7 @@ public class ChatService : IChatService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error sending chat update to client {ClientId}", participant.UserId);
+                HandleError(participant.UserId, ex, "BroadcastChatUpdateAsync");
             }
         }
     }
@@ -209,7 +274,7 @@ public class ChatService : IChatService
     public async Task BroadcastTypingStatusAsync(string userId, string nickname, bool isTyping)
     {
         var message = new { type = "typing", userId, nickname, isTyping };
-        var json = JsonSerializer.Serialize(message, _jsonOptions);
+        var json = SerializeMessage(message);
         var bytes = Encoding.UTF8.GetBytes(json);
 
         foreach (var (id, client) in _clientManager.GetAllClients())
@@ -227,7 +292,7 @@ public class ChatService : IChatService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error sending typing status to client {ClientId}", id);
+                HandleError(id, ex, "BroadcastTypingStatusAsync");
             }
         }
     }
@@ -271,11 +336,11 @@ public class ChatService : IChatService
                         }
                         else
                         {
-                            var nickname = message.Name ?? "Anonymous";
+                            var nickname = SanitizeInput(message.Name) ?? "Anonymous";
                             _clientManager.UpdateUserNickname(clientId, nickname);
 
-                            var chatRoomId = message.ChatRoomId ?? "general";
-                            var chatMessage = ChatMessage.Create(message.Text, nickname, chatRoomId, clientId);
+                            var chatRoomId = message.ChatRoomId ?? DefaultChatRoomId;
+                            var chatMessage = ChatMessage.Create(SanitizeInput(message.Text), nickname, chatRoomId, clientId);
                             await _messageRepository.AddAsync(chatMessage);
                             await BroadcastToChatAsync(chatRoomId, chatMessage, clientId);
                         }
@@ -283,13 +348,13 @@ public class ChatService : IChatService
 
                     if (message?.Type == "clear")
                     {
-                        var chatRoomId = message.ChatRoomId ?? "general";
+                        var chatRoomId = message.ChatRoomId ?? DefaultChatRoomId;
                         await ClearChatAsync(chatRoomId);
                     }
                     else if (message?.Type == "switchChat")
                     {
                         // Handle chat switch
-                        var chatRoomId = message.ChatRoomId ?? "general";
+                        var chatRoomId = message.ChatRoomId ?? DefaultChatRoomId;
                         _clientManager.UpdateUserCurrentChat(clientId, chatRoomId);
 
                         var messages = await GetMessagesByChatAsync(chatRoomId);
@@ -299,13 +364,13 @@ public class ChatService : IChatService
                     else if (message?.Type == "nickname")
                     {
                         // Update nickname without sending a message
-                        var nickname = message.Name ?? "Anonymous";
+                        var nickname = SanitizeInput(message.Name) ?? "Anonymous";
                         _clientManager.UpdateUserNickname(clientId, nickname);
                     }
                     else if (message?.Type == "typing")
                     {
                         // Update typing status
-                        var nickname = message.Name ?? "Anonymous";
+                        var nickname = SanitizeInput(message.Name) ?? "Anonymous";
                         _clientManager.UpdateUserTypingStatus(clientId, message.IsTyping);
                         await BroadcastTypingStatusAsync(clientId, nickname, message.IsTyping);
                     }
@@ -322,6 +387,7 @@ public class ChatService : IChatService
         }
         catch (Exception ex)
         {
+            HandleError(clientId, ex, "HandleClientAsync");
             _logger.LogError(ex, "Error processing client {ClientId}", clientId);
         }
         finally
