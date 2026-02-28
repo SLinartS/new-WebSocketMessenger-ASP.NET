@@ -3,7 +3,9 @@ using SimpleMessenger.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.ConfigureKestrel(options => options.ListenAnyIP(builder.Configuration.GetValue("Server:Port", 5237)));
+builder.WebHost.ConfigureKestrel(options =>
+    options.ListenAnyIP(builder.Configuration.GetValue("Server:Port", 5237))
+);
 
 builder.Services.AddControllers();
 builder.Services.AddSingleton<IClientManager, ClientManager>();

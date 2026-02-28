@@ -28,12 +28,34 @@ public class ChatMessage
     [JsonPropertyName("isTyping")]
     public bool IsTyping { get; init; }
 
-    public static ChatMessage Create(string text, string name, string chatRoomId = "general", string? userId = null) =>
-        new() { Text = text, Name = name, Type = "message", ChatRoomId = chatRoomId, UserId = userId };
+    public static ChatMessage Create(
+        string text,
+        string name,
+        string chatRoomId = "general",
+        string? userId = null
+    ) =>
+        new()
+        {
+            Text = text,
+            Name = name,
+            Type = "message",
+            ChatRoomId = chatRoomId,
+            UserId = userId,
+        };
 
     public static ChatMessage System(string text, string chatRoomId = "general") =>
-        new() { Text = text, Type = "system", ChatRoomId = chatRoomId };
+        new()
+        {
+            Text = text,
+            Type = "system",
+            ChatRoomId = chatRoomId,
+        };
 
     public static ChatMessage Clear(string text, string chatRoomId = "general") =>
-        new() { Text = text, Type = "clear", ChatRoomId = chatRoomId };
+        new()
+        {
+            Text = text,
+            Type = "clear",
+            ChatRoomId = chatRoomId,
+        };
 }

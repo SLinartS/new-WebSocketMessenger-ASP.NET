@@ -19,7 +19,7 @@ public class ClientManager : IClientManager
             Id = id,
             Nickname = "Anonymous",
             IpAddress = ipAddress,
-            ConnectedAt = DateTime.UtcNow
+            ConnectedAt = DateTime.UtcNow,
         };
 
         this.RaiseUsersChanged("added", this._users[id]);
@@ -67,22 +67,21 @@ public class ClientManager : IClientManager
         this._clients.TryGetValue(id, out var client) ? client : null;
 
     public IEnumerable<ActiveUser> GetActiveUsers() =>
-        [.. this._users.Values.Select(u => new ActiveUser
-        {
-            Id = u.Id,
-            Nickname = u.Nickname,
-            IpAddress = u.IpAddress,
-            ConnectedAt = u.ConnectedAt,
-            IsTyping = u.IsTyping,
-            CurrentChatId = u.CurrentChatId
-        })];
+        [
+            .. this._users.Values.Select(u => new ActiveUser
+            {
+                Id = u.Id,
+                Nickname = u.Nickname,
+                IpAddress = u.IpAddress,
+                ConnectedAt = u.ConnectedAt,
+                IsTyping = u.IsTyping,
+                CurrentChatId = u.CurrentChatId,
+            }),
+        ];
 
     public ActiveUser? GetUser(string id) =>
         this._users.TryGetValue(id, out var user) ? user : null;
 
-    private void RaiseUsersChanged(string type, ActiveUser user) => UsersChanged?.Invoke(new UserChangedEventArgs
-    {
-        Type = type,
-        User = user
-    });
+    private void RaiseUsersChanged(string type, ActiveUser user) =>
+        UsersChanged?.Invoke(new UserChangedEventArgs { Type = type, User = user });
 }
