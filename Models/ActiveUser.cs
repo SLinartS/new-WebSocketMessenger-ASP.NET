@@ -6,6 +6,6 @@ public class ActiveUser
     public string Nickname { get; set; } = string.Empty;
     public string IpAddress { get; set; } = string.Empty;
     public DateTime ConnectedAt { get; set; } = DateTime.UtcNow;
-    public bool IsTyping { get; set; } = false;
+    public bool IsTyping { get; set; }
     public string CurrentChatId { get; set; } = "general";
 }

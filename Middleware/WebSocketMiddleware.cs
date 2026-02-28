@@ -1,6 +1,6 @@
-using SimpleMessenger.Services;
-
 namespace SimpleMessenger.Middleware;
+
+using SimpleMessenger.Services;
 
 public class WebSocketMiddleware(RequestDelegate next, IChatService chatService)
 {
@@ -11,7 +11,7 @@ public class WebSocketMiddleware(RequestDelegate next, IChatService chatService)
     {
         if (context.Request.Path != "/ws")
         {
-            await _next(context);
+            await this._next(context);
             return;
         }
 
@@ -34,12 +34,15 @@ public class WebSocketMiddleware(RequestDelegate next, IChatService chatService)
 
         var ipAddress = GetIpAddress(context.Connection.RemoteIpAddress);
 
-        await _chatService.HandleClientAsync(clientId, ws, ipAddress, cts.Token);
+        await this._chatService.HandleClientAsync(clientId, ws, ipAddress, cts.Token);
     }
 
     private static string GetIpAddress(System.Net.IPAddress? address)
     {
-        if (address == null) return "unknown";
+        if (address == null)
+        {
+            return "unknown";
+        }
 
         var ipString = address.ToString();
 

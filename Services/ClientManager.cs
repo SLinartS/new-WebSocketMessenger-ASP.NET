@@ -1,8 +1,8 @@
-using System.Net.WebSockets;
-using System.Collections.Concurrent;
-using SimpleMessenger.Models;
-
 namespace SimpleMessenger.Services;
+
+using System.Collections.Concurrent;
+using System.Net.WebSockets;
+using SimpleMessenger.Models;
 
 public class ClientManager : IClientManager
 {
@@ -13,61 +13,61 @@ public class ClientManager : IClientManager
 
     public void AddClient(string id, WebSocket socket, string ipAddress)
     {
-        _clients[id] = socket;
-        _users[id] = new ActiveUser
+        this._clients[id] = socket;
+        this._users[id] = new ActiveUser
         {
             Id = id,
             Nickname = "Anonymous",
             IpAddress = ipAddress,
             ConnectedAt = DateTime.UtcNow
         };
-        
-        RaiseUsersChanged("added", _users[id]);
+
+        this.RaiseUsersChanged("added", this._users[id]);
     }
 
     public void RemoveClient(string id)
     {
-        _clients.TryRemove(id, out _);
-        if (_users.TryRemove(id, out var user))
+        this._clients.TryRemove(id, out _);
+        if (this._users.TryRemove(id, out var user))
         {
-            RaiseUsersChanged("removed", user);
+            this.RaiseUsersChanged("removed", user);
         }
     }
 
     public void UpdateUserNickname(string id, string nickname)
     {
-        if (_users.TryGetValue(id, out var user))
+        if (this._users.TryGetValue(id, out var user))
         {
             user.Nickname = nickname;
-            RaiseUsersChanged("updated", user);
+            this.RaiseUsersChanged("updated", user);
         }
     }
 
     public void UpdateUserTypingStatus(string id, bool isTyping)
     {
-        if (_users.TryGetValue(id, out var user))
+        if (this._users.TryGetValue(id, out var user))
         {
             user.IsTyping = isTyping;
-            RaiseUsersChanged("updated", user);
+            this.RaiseUsersChanged("updated", user);
         }
     }
 
     public void UpdateUserCurrentChat(string id, string chatRoomId)
     {
-        if (_users.TryGetValue(id, out var user))
+        if (this._users.TryGetValue(id, out var user))
         {
             user.CurrentChatId = chatRoomId;
-            RaiseUsersChanged("updated", user);
+            this.RaiseUsersChanged("updated", user);
         }
     }
 
-    public IReadOnlyDictionary<string, WebSocket> GetAllClients() => _clients;
-    
+    public IReadOnlyDictionary<string, WebSocket> GetAllClients() => this._clients;
+
     public WebSocket? GetClient(string id) =>
-        _clients.TryGetValue(id, out var client) ? client : null;
-    
-    public IEnumerable<ActiveUser> GetActiveUsers() => 
-        _users.Values.Select(u => new ActiveUser
+        this._clients.TryGetValue(id, out var client) ? client : null;
+
+    public IEnumerable<ActiveUser> GetActiveUsers() =>
+        [.. this._users.Values.Select(u => new ActiveUser
         {
             Id = u.Id,
             Nickname = u.Nickname,
@@ -75,17 +75,14 @@ public class ClientManager : IClientManager
             ConnectedAt = u.ConnectedAt,
             IsTyping = u.IsTyping,
             CurrentChatId = u.CurrentChatId
-        }).ToList();
-    
-    public ActiveUser? GetUser(string id) =>
-        _users.TryGetValue(id, out var user) ? user : null;
+        })];
 
-    private void RaiseUsersChanged(string type, ActiveUser user)
+    public ActiveUser? GetUser(string id) =>
+        this._users.TryGetValue(id, out var user) ? user : null;
+
+    private void RaiseUsersChanged(string type, ActiveUser user) => UsersChanged?.Invoke(new UserChangedEventArgs
     {
-        UsersChanged?.Invoke(new UserChangedEventArgs
-        {
-            Type = type,
-            User = user
-        });
-    }
+        Type = type,
+        User = user
+    });
 }
