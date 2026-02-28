@@ -18,10 +18,13 @@ public class JsonMessageRepository : IMessageRepository, IDisposable
     public JsonMessageRepository(ILogger<JsonMessageRepository> logger)
     {
         this.logger = logger;
-        var directory = AppDomain.CurrentDomain.BaseDirectory;
-        this.filePath = Path.Combine(directory, "message_history.json");
-        this.chatRoomsFilePath = Path.Combine(directory, "chat_rooms.json");
-        this.chatParticipantsFilePath = Path.Combine(directory, "chat_participants.json");
+        var dataDir =
+            Environment.GetEnvironmentVariable("DATA_DIR")
+            ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data");
+        Directory.CreateDirectory(dataDir);
+        this.filePath = Path.Combine(dataDir, "message_history.json");
+        this.chatRoomsFilePath = Path.Combine(dataDir, "chat_rooms.json");
+        this.chatParticipantsFilePath = Path.Combine(dataDir, "chat_participants.json");
     }
 
     private async Task<T?> LoadJsonFileAsync<T>(string filePath)
