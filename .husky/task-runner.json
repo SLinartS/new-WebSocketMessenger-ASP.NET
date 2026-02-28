@@ -5,22 +5,25 @@
          "name": "csharpier-format",
          "group": "pre-commit",
          "command": "dotnet",
-         "args": ["csharpier", "format", "${staged}"],
-         "include": ["**/*.cs"]
+         "args": [
+            "csharpier",
+            "format",
+            "${staged}"
+         ],
+         "include": [
+            "**/*.cs"
+         ]
       },
       {
-         "name": "dotnet-format-whitespace",
+         "name": "dotnet-format-check",
          "group": "pre-commit",
          "command": "dotnet",
          "args": [
             "format",
-            "whitespace",
             "SimpleMessenger.sln",
             "--verify-no-changes",
-            "--include",
-            "${staged}"
-         ],
-         "include": ["**/*.cs"]
+            "--report"
+         ]
       }
    ]
 }

@@ -4,14 +4,14 @@ using SimpleMessenger.Services;
 
 public class WebSocketMiddleware(RequestDelegate next, IChatService chatService)
 {
-    private readonly RequestDelegate _next = next;
-    private readonly IChatService _chatService = chatService;
+    private readonly RequestDelegate next = next;
+    private readonly IChatService chatService = chatService;
 
     public async Task InvokeAsync(HttpContext context)
     {
         if (context.Request.Path != "/ws")
         {
-            await this._next(context);
+            await this.next(context);
             return;
         }
 
@@ -34,7 +34,7 @@ public class WebSocketMiddleware(RequestDelegate next, IChatService chatService)
 
         var ipAddress = GetIpAddress(context.Connection.RemoteIpAddress);
 
-        await this._chatService.HandleClientAsync(clientId, ws, ipAddress, cts.Token);
+        await this.chatService.HandleClientAsync(clientId, ws, ipAddress, cts.Token);
     }
 
     private static string GetIpAddress(System.Net.IPAddress? address)

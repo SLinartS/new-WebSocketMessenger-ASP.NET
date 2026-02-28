@@ -5,23 +5,23 @@ using SimpleMessenger.Models;
 
 public class JsonMessageRepository : IMessageRepository, IDisposable
 {
-    private readonly string _filePath;
-    private readonly string _chatRoomsFilePath;
-    private readonly string _chatParticipantsFilePath;
+    private readonly string filePath;
+    private readonly string chatRoomsFilePath;
+    private readonly string chatParticipantsFilePath;
 
-    private readonly SemaphoreSlim _semaphore = new(1, 1);
+    private readonly SemaphoreSlim semaphore = new(1, 1);
 
-    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+    private static readonly JsonSerializerOptions jsonOptions = new() { WriteIndented = true };
 
-    private readonly ILogger<JsonMessageRepository> _logger;
+    private readonly ILogger<JsonMessageRepository> logger;
 
     public JsonMessageRepository(ILogger<JsonMessageRepository> logger)
     {
-        this._logger = logger;
+        this.logger = logger;
         var directory = AppDomain.CurrentDomain.BaseDirectory;
-        this._filePath = Path.Combine(directory, "message_history.json");
-        this._chatRoomsFilePath = Path.Combine(directory, "chat_rooms.json");
-        this._chatParticipantsFilePath = Path.Combine(directory, "chat_participants.json");
+        this.filePath = Path.Combine(directory, "message_history.json");
+        this.chatRoomsFilePath = Path.Combine(directory, "chat_rooms.json");
+        this.chatParticipantsFilePath = Path.Combine(directory, "chat_participants.json");
     }
 
     private async Task<T?> LoadJsonFileAsync<T>(string filePath)
@@ -43,7 +43,7 @@ public class JsonMessageRepository : IMessageRepository, IDisposable
         }
         catch (JsonException ex)
         {
-            this._logger.LogWarning(
+            this.logger.LogWarning(
                 ex,
                 "Corrupt JSON file {Path}, returning empty collection",
                 filePath
@@ -54,20 +54,20 @@ public class JsonMessageRepository : IMessageRepository, IDisposable
 
     private static async Task SaveJsonFileAsync<T>(string filePath, T data)
     {
-        var json = JsonSerializer.Serialize(data, JsonOptions);
+        var json = JsonSerializer.Serialize(data, jsonOptions);
         await File.WriteAllTextAsync(filePath, json);
     }
 
     public async Task<List<ChatMessage>> GetAllAsync()
     {
-        await this._semaphore.WaitAsync();
+        await this.semaphore.WaitAsync();
         try
         {
-            return await this.LoadJsonFileAsync<List<ChatMessage>>(this._filePath) ?? [];
+            return await this.LoadJsonFileAsync<List<ChatMessage>>(this.filePath) ?? [];
         }
         finally
         {
-            this._semaphore.Release();
+            this.semaphore.Release();
         }
     }
 
@@ -79,138 +79,138 @@ public class JsonMessageRepository : IMessageRepository, IDisposable
 
     public async Task AddAsync(ChatMessage message)
     {
-        await this._semaphore.WaitAsync();
+        await this.semaphore.WaitAsync();
         try
         {
-            var messages = await this.LoadJsonFileAsync<List<ChatMessage>>(this._filePath) ?? [];
+            var messages = await this.LoadJsonFileAsync<List<ChatMessage>>(this.filePath) ?? [];
             messages.Add(message);
-            await SaveJsonFileAsync(this._filePath, messages);
+            await SaveJsonFileAsync(this.filePath, messages);
         }
         finally
         {
-            this._semaphore.Release();
+            this.semaphore.Release();
         }
     }
 
     public async Task ClearAsync()
     {
-        await this._semaphore.WaitAsync();
+        await this.semaphore.WaitAsync();
         try
         {
-            await SaveJsonFileAsync(this._filePath, Array.Empty<ChatMessage>());
+            await SaveJsonFileAsync(this.filePath, Array.Empty<ChatMessage>());
         }
         finally
         {
-            this._semaphore.Release();
+            this.semaphore.Release();
         }
     }
 
     public async Task ClearMessagesByChatAsync(string chatRoomId)
     {
-        await this._semaphore.WaitAsync();
+        await this.semaphore.WaitAsync();
         try
         {
-            var messages = await this.LoadJsonFileAsync<List<ChatMessage>>(this._filePath) ?? [];
+            var messages = await this.LoadJsonFileAsync<List<ChatMessage>>(this.filePath) ?? [];
             var remaining = messages.Where(m => m.ChatRoomId != chatRoomId).ToList();
-            await SaveJsonFileAsync(this._filePath, remaining);
+            await SaveJsonFileAsync(this.filePath, remaining);
         }
         finally
         {
-            this._semaphore.Release();
+            this.semaphore.Release();
         }
     }
 
     public async Task<List<ChatRoom>> GetChatRoomsAsync()
     {
-        await this._semaphore.WaitAsync();
+        await this.semaphore.WaitAsync();
         try
         {
-            return await this.LoadJsonFileAsync<List<ChatRoom>>(this._chatRoomsFilePath) ?? [];
+            return await this.LoadJsonFileAsync<List<ChatRoom>>(this.chatRoomsFilePath) ?? [];
         }
         finally
         {
-            this._semaphore.Release();
+            this.semaphore.Release();
         }
     }
 
     public async Task AddChatRoomAsync(ChatRoom chatRoom)
     {
-        await this._semaphore.WaitAsync();
+        await this.semaphore.WaitAsync();
         try
         {
-            var rooms = await this.LoadJsonFileAsync<List<ChatRoom>>(this._chatRoomsFilePath) ?? [];
+            var rooms = await this.LoadJsonFileAsync<List<ChatRoom>>(this.chatRoomsFilePath) ?? [];
             rooms.Add(chatRoom);
-            await SaveJsonFileAsync(this._chatRoomsFilePath, rooms);
+            await SaveJsonFileAsync(this.chatRoomsFilePath, rooms);
         }
         finally
         {
-            this._semaphore.Release();
+            this.semaphore.Release();
         }
     }
 
     public async Task RemoveChatRoomAsync(string chatRoomId)
     {
-        await this._semaphore.WaitAsync();
+        await this.semaphore.WaitAsync();
         try
         {
-            var rooms = await this.LoadJsonFileAsync<List<ChatRoom>>(this._chatRoomsFilePath) ?? [];
+            var rooms = await this.LoadJsonFileAsync<List<ChatRoom>>(this.chatRoomsFilePath) ?? [];
             var remaining = rooms.Where(c => c.Id != chatRoomId).ToList();
-            await SaveJsonFileAsync(this._chatRoomsFilePath, remaining);
+            await SaveJsonFileAsync(this.chatRoomsFilePath, remaining);
         }
         finally
         {
-            this._semaphore.Release();
+            this.semaphore.Release();
         }
     }
 
     public async Task<List<ChatParticipant>> GetChatParticipantsAsync()
     {
-        await this._semaphore.WaitAsync();
+        await this.semaphore.WaitAsync();
         try
         {
             return await this.LoadJsonFileAsync<List<ChatParticipant>>(
-                    this._chatParticipantsFilePath
+                    this.chatParticipantsFilePath
                 ) ?? [];
         }
         finally
         {
-            this._semaphore.Release();
+            this.semaphore.Release();
         }
     }
 
     public async Task AddChatParticipantAsync(ChatParticipant participant)
     {
-        await this._semaphore.WaitAsync();
+        await this.semaphore.WaitAsync();
         try
         {
             var participants =
-                await this.LoadJsonFileAsync<List<ChatParticipant>>(this._chatParticipantsFilePath)
+                await this.LoadJsonFileAsync<List<ChatParticipant>>(this.chatParticipantsFilePath)
                 ?? [];
             participants.Add(participant);
-            await SaveJsonFileAsync(this._chatParticipantsFilePath, participants);
+            await SaveJsonFileAsync(this.chatParticipantsFilePath, participants);
         }
         finally
         {
-            this._semaphore.Release();
+            this.semaphore.Release();
         }
     }
 
     public async Task RemoveChatParticipantAsync(string chatRoomId, string userId)
     {
-        await this._semaphore.WaitAsync();
+        await this.semaphore.WaitAsync();
         try
         {
             var participants =
-                await this.LoadJsonFileAsync<List<ChatParticipant>>(this._chatParticipantsFilePath)
+                await this.LoadJsonFileAsync<List<ChatParticipant>>(this.chatParticipantsFilePath)
                 ?? [];
             var remaining = participants
                 .Where(p => p.ChatRoomId != chatRoomId || p.UserId != userId)
                 .ToList();
-            await SaveJsonFileAsync(this._chatParticipantsFilePath, remaining);
+            await SaveJsonFileAsync(this.chatParticipantsFilePath, remaining);
         }
         finally
         {
-            this._semaphore.Release();
+            this.semaphore.Release();
         }
     }
 
@@ -228,7 +228,7 @@ public class JsonMessageRepository : IMessageRepository, IDisposable
 
     public void Dispose()
     {
-        this._semaphore.Dispose();
+        this.semaphore.Dispose();
         GC.SuppressFinalize(this);
     }
 }
