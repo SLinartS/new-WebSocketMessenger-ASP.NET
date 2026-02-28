@@ -6,4 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <!-- Auto-install Husky git hooks after restore (skipped in CI environments) -->
+  <Target Name="HuskyInstall" AfterTargets="Restore" Condition="'$(HUSKY)' != '0'">
+    <Exec Command="dotnet tool restore" StandardOutputImportance="Low" />
+    <Exec Command="dotnet husky install" StandardOutputImportance="Low" />
+  </Target>
+
 </Project>

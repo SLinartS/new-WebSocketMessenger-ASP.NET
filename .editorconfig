@@ -1,0 +1,80 @@
+# Top-level EditorConfig file
+root = true
+
+# C# files
+[*.{cs,csx}]
+indent_style = space
+indent_size = 4
+charset = utf-8
+end_of_line = lf
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# Coding conventions
+[*.{cs,csx}]
+# Accessibility modifiers
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_method_call_parameter_list_parentheses = false
+csharp_space_after_cast = false
+csharp_space_after_colon_in_inheritance_clause = true
+csharp_space_before_colon_in_inheritance_clause = true
+csharp_space_around_binary_operators = before_and_after
+
+# Block spacing
+csharp_blank_lines_before_open_brace = 1
+csharp_blank_lines_around_namespace = 1
+
+# Newline preferences
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+
+# Expression-bodied members
+csharp_style_expression_bodied_methods = false
+csharp_style_expression_bodied_properties = true
+csharp_style_expression_bodied_constructors = false
+
+# Pattern matching
+csharp_style_pattern_matching_over_as_with_null_check = true
+csharp_style_pattern_matching_over_is_with_type_check = true
+
+# Null checking
+csharp_prefer_null_check_over_type_check = true
+
+# Variable preferences
+csharp_prefer_local_over_anonymous_function = true
+csharp_prefer_static_local_function_over_instance = true
+csharp_prefer_deconstruction = true
+
+# Modifier preferences
+csharp_prefer_static_member = true
+csharp_prefer_qualification = false
+
+# Using directives
+csharp_using_directive_placement = outside_namespace
+csharp_remove_unnecessary_using_directives = true
+
+# Naming conventions
+dotnet_naming_rule.interface_should_be_iprefixed.symbols = interface
+dotnet_naming_rule.interface_should_be_iprefixed.style = iprefixed
+dotnet_naming_rule.interface_should_be_iprefixed.severity = suggestion
+dotnet_naming_symbols.interface.applicable_kinds = interface
+dotnet_naming_style.iprefixed.applicable_kinds = interface
+dotnet_naming_style.iprefixed.prefix = I
+dotnet_naming_style.iprefixed.required_char_style = uppercase
+dotnet_naming_style.iprefixed.word_separator = 
+
+# General options
+dotnet_sort_system_directives_first = true
+dotnet_remove_unnecessary_suppressions = true
+
+# Language usage
+csharp_prefer_implicit_type = false
+csharp_prefer_simple_default_expression = true
+csharp_prefer_discard_local_variable = true
+csharp_prefer_pattern_matching = true
+csharp_prefer_braces = true
+csharp_prefer_method_group_conversion = true
+csharp_prefer_local_over_field = true

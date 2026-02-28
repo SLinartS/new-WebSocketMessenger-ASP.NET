@@ -1,0 +1,8 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+## Restore dotnet tools if not already installed
+dotnet tool restore
+
+## Run Husky.Net task runner (group: pre-commit)
+dotnet husky run --group pre-commit

@@ -1,2 +1,5 @@
 /bin
 /obj
+
+# Husky.Net internal scripts (generated, not versioned)
+.husky/_/

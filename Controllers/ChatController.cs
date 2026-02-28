@@ -10,7 +10,8 @@ public class ChatController(
     IChatService chatService,
     IClientManager clientManager,
     IMessageRepository messageRepository,
-    ILogger<ChatController> logger) : ControllerBase
+    ILogger<ChatController> logger
+) : ControllerBase
 {
     private readonly IChatService _chatService = chatService;
     private readonly IClientManager _clientManager = clientManager;
@@ -52,7 +53,7 @@ public class ChatController(
                 Id = "general",
                 Name = "Общий чат",
                 CreatedAt = DateTime.UtcNow,
-                IsPrivate = false
+                IsPrivate = false,
             };
 
             var chatRooms = await this._messageRepository.GetChatRoomsAsync();
@@ -78,25 +79,33 @@ public class ChatController(
             Id = chatId,
             Name = "Приватный чат",
             CreatedAt = DateTime.UtcNow,
-            IsPrivate = true
+            IsPrivate = true,
         };
 
         await this._messageRepository.AddChatRoomAsync(chatRoom);
-        await this._messageRepository.AddChatParticipantAsync(new ChatParticipant
-        {
-            ChatRoomId = chatId,
-            UserId = request.UserId,
-            JoinedAt = DateTime.UtcNow
-        });
-        await this._messageRepository.AddChatParticipantAsync(new ChatParticipant
-        {
-            ChatRoomId = chatId,
-            UserId = request.TargetUserId,
-            JoinedAt = DateTime.UtcNow
-        });
+        await this._messageRepository.AddChatParticipantAsync(
+            new ChatParticipant
+            {
+                ChatRoomId = chatId,
+                UserId = request.UserId,
+                JoinedAt = DateTime.UtcNow,
+            }
+        );
+        await this._messageRepository.AddChatParticipantAsync(
+            new ChatParticipant
+            {
+                ChatRoomId = chatId,
+                UserId = request.TargetUserId,
+                JoinedAt = DateTime.UtcNow,
+            }
+        );
 
-        this._logger.LogInformation("Created private chat {ChatId} between {User1} and {User2}",
-            chatId, request.UserId, request.TargetUserId);
+        this._logger.LogInformation(
+            "Created private chat {ChatId} between {User1} and {User2}",
+            chatId,
+            request.UserId,
+            request.TargetUserId
+        );
 
         return this.Ok(chatRoom);
     }
@@ -156,14 +165,16 @@ public class ChatController(
         var messages = await this._messageRepository.GetMessagesByChatAsync(chatId);
 
         var participants = await this._messageRepository.GetParticipantsByChatAsync(chatId);
-        var onlineUsers = this._clientManager.GetActiveUsers()
+        var onlineUsers = this
+            ._clientManager.GetActiveUsers()
             .Where(u => participants.Any(p => p.UserId == u.Id))
             .Select(u => new OnlineUser
             {
                 Id = u.Id,
                 Nickname = u.Nickname,
-                IsTyping = u.IsTyping
-            }).ToList();
+                IsTyping = u.IsTyping,
+            })
+            .ToList();
 
         await this._chatService.BroadcastChatUpdateAsync(chatId, messages, onlineUsers);
 
@@ -175,10 +186,13 @@ public class ChatController(
     {
         if (string.IsNullOrWhiteSpace(request.UserId))
         {
-            return Task.FromResult<ActionResult<UserSearchResult>>(this.BadRequest("UserId is required"));
+            return Task.FromResult<ActionResult<UserSearchResult>>(
+                this.BadRequest("UserId is required")
+            );
         }
 
-        var foundUser = this._clientManager.GetActiveUsers()
+        var foundUser = this
+            ._clientManager.GetActiveUsers()
             .FirstOrDefault(u => u.Id == request.TargetUserId);
 
         if (foundUser is null)
@@ -188,15 +202,15 @@ public class ChatController(
             );
         }
 
-        return Task.FromResult<ActionResult<UserSearchResult>>(this.Ok(new UserSearchResult
-        {
-            Found = true,
-            User = new UserInfo
-            {
-                Id = foundUser.Id,
-                Nickname = foundUser.Nickname
-            }
-        }));
+        return Task.FromResult<ActionResult<UserSearchResult>>(
+            this.Ok(
+                new UserSearchResult
+                {
+                    Found = true,
+                    User = new UserInfo { Id = foundUser.Id, Nickname = foundUser.Nickname },
+                }
+            )
+        );
     }
 
     private async Task<ChatRoom?> FindPrivateChatAsync(string userId1, string userId2)
@@ -205,7 +219,9 @@ public class ChatController(
 
         foreach (var room in chatRooms.Where(c => c.IsPrivate))
         {
-            var roomParticipants = await this._messageRepository.GetParticipantsByChatAsync(room.Id);
+            var roomParticipants = await this._messageRepository.GetParticipantsByChatAsync(
+                room.Id
+            );
             var ids = roomParticipants.Select(p => p.UserId).ToHashSet();
             if (ids.Contains(userId1) && ids.Contains(userId2))
             {
