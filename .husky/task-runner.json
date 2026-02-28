@@ -2,19 +2,6 @@
    "$schema": "https://alirezanet.github.io/Husky.Net/schema.json",
    "tasks": [
       {
-         "name": "csharpier-format",
-         "group": "pre-commit",
-         "command": "dotnet",
-         "args": [
-            "csharpier",
-            "format",
-            "${staged}"
-         ],
-         "include": [
-            "**/*.cs"
-         ]
-      },
-      {
          "name": "dotnet-format-check",
          "group": "pre-commit",
          "command": "dotnet",
@@ -22,7 +9,9 @@
             "format",
             "SimpleMessenger.sln",
             "--verify-no-changes",
-            "--report"
+            "--report",
+            "--severity",
+            "warn"
          ]
       }
    ]

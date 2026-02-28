@@ -1,6 +1,7 @@
-namespace SimpleMessenger.Middleware;
-
+﻿using System.Net.WebSockets;
 using SimpleMessenger.Services;
+
+namespace SimpleMessenger.Middleware;
 
 public class WebSocketMiddleware(RequestDelegate next, IChatService chatService)
 {
@@ -11,7 +12,7 @@ public class WebSocketMiddleware(RequestDelegate next, IChatService chatService)
     {
         if (context.Request.Path != "/ws")
         {
-            await this.next(context);
+            await next(context);
             return;
         }
 
@@ -24,17 +25,17 @@ public class WebSocketMiddleware(RequestDelegate next, IChatService chatService)
 
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
 
-        using var ws = await context.WebSockets.AcceptWebSocketAsync();
+        using WebSocket ws = await context.WebSockets.AcceptWebSocketAsync();
 
-        var clientId = context.Request.Query["userId"].FirstOrDefault();
+        string? clientId = context.Request.Query["userId"].FirstOrDefault();
         if (string.IsNullOrEmpty(clientId))
         {
             clientId = Guid.NewGuid().ToString()[..8];
         }
 
-        var ipAddress = GetIpAddress(context.Connection.RemoteIpAddress);
+        string ipAddress = GetIpAddress(context.Connection.RemoteIpAddress);
 
-        await this.chatService.HandleClientAsync(clientId, ws, ipAddress, cts.Token);
+        await chatService.HandleClientAsync(clientId, ws, ipAddress, cts.Token);
     }
 
     private static string GetIpAddress(System.Net.IPAddress? address)
@@ -44,7 +45,7 @@ public class WebSocketMiddleware(RequestDelegate next, IChatService chatService)
             return "unknown";
         }
 
-        var ipString = address.ToString();
+        string ipString = address.ToString();
 
         if (ipString.StartsWith("::ffff:"))
         {

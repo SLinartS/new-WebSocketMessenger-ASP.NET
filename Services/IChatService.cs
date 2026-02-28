@@ -1,7 +1,8 @@
-namespace SimpleMessenger.Services;
-
+﻿
 using System.Net.WebSockets;
 using SimpleMessenger.Models;
+
+namespace SimpleMessenger.Services;
 
 public interface IChatService
 {

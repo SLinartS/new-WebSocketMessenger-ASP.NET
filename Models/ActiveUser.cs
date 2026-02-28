@@ -1,4 +1,4 @@
-namespace SimpleMessenger.Models;
+﻿namespace SimpleMessenger.Models;
 
 public class ActiveUser
 {

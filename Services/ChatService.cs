@@ -1,13 +1,14 @@
-namespace SimpleMessenger.Services;
-
+﻿
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using SimpleMessenger.Models;
 
+namespace SimpleMessenger.Services;
+
 public class ChatService : IChatService
 {
-    private const string defaultChatRoomId = "general";
+    private const string DefaultChatRoomId = "general";
     private static readonly JsonSerializerOptions jsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -28,7 +29,7 @@ public class ChatService : IChatService
         this.logger = logger;
 
         this.clientManager.UsersChanged += _ =>
-            this.BroadcastUsersListAsync()
+            BroadcastUsersListAsync()
                 .ContinueWith(
                     t =>
                         this.logger.LogError(
@@ -43,7 +44,7 @@ public class ChatService : IChatService
         JsonSerializer.Serialize(message, jsonOptions);
 
     private void HandleError(string clientId, Exception ex, string operation) =>
-        this.logger.LogError(
+        logger.LogError(
             ex,
             "Error during {Operation} for client {ClientId}",
             operation,
@@ -51,7 +52,7 @@ public class ChatService : IChatService
         );
 
     private void LogRequest(string clientId, string operation, string details = "") =>
-        this.logger.LogInformation(
+        logger.LogInformation(
             "Request - Client: {ClientId}, Operation: {Operation}, Details: {Details}",
             clientId,
             operation,
@@ -74,13 +75,13 @@ public class ChatService : IChatService
         IEnumerable<(string Id, WebSocket Client)> clients,
         byte[] messageBytes,
         string? excludeClientId = null,
-        CancellationToken ct = default,
-        string? logTemplate = null
+        string? logTemplate = null,
+        CancellationToken ct = default
     )
     {
-        var sentCount = 0;
+        int sentCount = 0;
 
-        foreach (var (id, client) in clients)
+        foreach ((string? id, WebSocket? client) in clients)
         {
             if (id == excludeClientId || client.State != WebSocketState.Open)
             {
@@ -94,31 +95,31 @@ public class ChatService : IChatService
             }
             catch (Exception ex)
             {
-                this.HandleError(id, ex, nameof(BroadcastToClientsAsync));
-                this.clientManager.RemoveClient(id);
+                HandleError(id, ex, nameof(BroadcastToClientsAsync));
+                clientManager.RemoveClient(id);
             }
         }
 
         if (logTemplate != null)
         {
-            this.logger.LogInformation(logTemplate, sentCount);
+            logger.LogInformation(logTemplate, sentCount);
         }
     }
 
     public async Task<List<ChatMessage>> GetMessageHistoryAsync() =>
-        await this.messageRepository.GetAllAsync();
+        await messageRepository.GetAllAsync();
 
     public async Task<List<ChatMessage>> GetMessagesByChatAsync(string chatRoomId) =>
-        await this.messageRepository.GetMessagesByChatAsync(chatRoomId);
+        await messageRepository.GetMessagesByChatAsync(chatRoomId);
 
     public async Task<List<OnlineUser>> GetOnlineUsersByChatAsync(string chatRoomId)
     {
-        var participants = await this.messageRepository.GetParticipantsByChatAsync(chatRoomId);
+        List<ChatParticipant> participants = await messageRepository.GetParticipantsByChatAsync(chatRoomId);
         var participantIds = new HashSet<string>(participants.Select(p => p.UserId));
         return
         [
-            .. this
-                .clientManager.GetActiveUsers()
+            ..
+                clientManager.GetActiveUsers()
                 .Where(u => participantIds.Contains(u.Id))
                 .Select(MapToOnlineUser),
         ];
@@ -126,24 +127,24 @@ public class ChatService : IChatService
 
     public async Task SendMessageAsync(string clientId, ChatMessage message)
     {
-        var client = this.clientManager.GetClient(clientId);
+        WebSocket? client = clientManager.GetClient(clientId);
         if (client?.State != WebSocketState.Open)
         {
             return;
         }
 
-        this.LogRequest(clientId, "SendMessage", $"Message type: {message.Type}");
+        LogRequest(clientId, "SendMessage", $"Message type: {message.Type}");
 
-        var bytes = Encode(message);
+        byte[] bytes = Encode(message);
         await SendBytesAsync(client, bytes, CancellationToken.None);
     }
 
     public async Task BroadcastAsync(ChatMessage message, string? excludeClientId = null)
     {
-        var bytes = Encode(message);
-        var clients = this.clientManager.GetAllClients().Select(kv => (kv.Key, kv.Value));
+        byte[] bytes = Encode(message);
+        IEnumerable<(string Key, WebSocket Value)> clients = clientManager.GetAllClients().Select(kv => (kv.Key, kv.Value));
 
-        await this.BroadcastToClientsAsync(
+        await BroadcastToClientsAsync(
             clients,
             bytes,
             excludeClientId,
@@ -157,23 +158,23 @@ public class ChatService : IChatService
         string? excludeClientId = null
     )
     {
-        var participants = await this.messageRepository.GetParticipantsByChatAsync(chatRoomId);
-        var bytes = Encode(message);
+        List<ChatParticipant> participants = await messageRepository.GetParticipantsByChatAsync(chatRoomId);
+        byte[] bytes = Encode(message);
 
-        var clients = participants
-            .Select(p => (p.UserId, this.clientManager.GetClient(p.UserId)))
+        IEnumerable<(string UserId, WebSocket)> clients = participants
+            .Select(p => (p.UserId, clientManager.GetClient(p.UserId)))
             .Where(pair => pair.Item2 != null)
             .Select(pair => (pair.UserId, pair.Item2!));
 
-        await this.BroadcastToClientsAsync(clients, bytes, excludeClientId, logTemplate: null);
+        await BroadcastToClientsAsync(clients, bytes, excludeClientId, logTemplate: null);
 
-        this.logger.LogInformation("Broadcast to chat {ChatId}", chatRoomId);
+        logger.LogInformation("Broadcast to chat {ChatId}", chatRoomId);
     }
 
     public async Task BroadcastUsersListAsync()
     {
-        var users = this
-            .clientManager.GetActiveUsers()
+        var users =
+            clientManager.GetActiveUsers()
             .Select(u => new
             {
                 id = u.Id,
@@ -183,10 +184,10 @@ public class ChatService : IChatService
             })
             .ToList();
 
-        var bytes = Encode(new { type = "usersList", users });
-        var clients = this.clientManager.GetAllClients().Select(kv => (kv.Key, kv.Value));
+        byte[] bytes = Encode(new { type = "usersList", users });
+        IEnumerable<(string Key, WebSocket Value)> clients = clientManager.GetAllClients().Select(kv => (kv.Key, kv.Value));
 
-        await this.BroadcastToClientsAsync(clients, bytes);
+        await BroadcastToClientsAsync(clients, bytes);
     }
 
     public async Task BroadcastChatUpdateAsync(
@@ -205,7 +206,7 @@ public class ChatService : IChatService
             })
             .ToList();
 
-        var bytes = Encode(
+        byte[] bytes = Encode(
             new
             {
                 type = "chatUpdate",
@@ -214,19 +215,19 @@ public class ChatService : IChatService
                 users,
             }
         );
-        var participants = await this.messageRepository.GetParticipantsByChatAsync(chatRoomId);
+        List<ChatParticipant> participants = await messageRepository.GetParticipantsByChatAsync(chatRoomId);
 
-        var clients = participants
-            .Select(p => (p.UserId, this.clientManager.GetClient(p.UserId)))
+        IEnumerable<(string UserId, WebSocket)> clients = participants
+            .Select(p => (p.UserId, clientManager.GetClient(p.UserId)))
             .Where(pair => pair.Item2 != null)
             .Select(pair => (pair.UserId, pair.Item2!));
 
-        await this.BroadcastToClientsAsync(clients, bytes);
+        await BroadcastToClientsAsync(clients, bytes);
     }
 
     public async Task BroadcastTypingStatusAsync(string userId, string nickname, bool isTyping)
     {
-        var bytes = Encode(
+        byte[] bytes = Encode(
             new
             {
                 type = "typing",
@@ -235,9 +236,9 @@ public class ChatService : IChatService
                 isTyping,
             }
         );
-        var clients = this.clientManager.GetAllClients().Select(kv => (kv.Key, kv.Value));
+        IEnumerable<(string Key, WebSocket Value)> clients = clientManager.GetAllClients().Select(kv => (kv.Key, kv.Value));
 
-        await this.BroadcastToClientsAsync(clients, bytes, excludeClientId: userId);
+        await BroadcastToClientsAsync(clients, bytes, excludeClientId: userId);
     }
 
     // -------------------------------------------------------------------------
@@ -246,14 +247,14 @@ public class ChatService : IChatService
 
     public async Task ClearChatAsync()
     {
-        await this.messageRepository.ClearAsync();
-        await this.BroadcastAsync(ChatMessage.System("Chat has been cleared"));
+        await messageRepository.ClearAsync();
+        await BroadcastAsync(ChatMessage.System("Chat has been cleared"));
     }
 
     public async Task ClearChatAsync(string chatRoomId)
     {
-        await this.messageRepository.ClearMessagesByChatAsync(chatRoomId);
-        await this.BroadcastToChatAsync(
+        await messageRepository.ClearMessagesByChatAsync(chatRoomId);
+        await BroadcastToChatAsync(
             chatRoomId,
             ChatMessage.Clear($"Chat {chatRoomId} has been cleared", chatRoomId)
         );
@@ -270,18 +271,18 @@ public class ChatService : IChatService
         CancellationToken ct
     )
     {
-        this.clientManager.AddClient(clientId, socket, ipAddress);
+        clientManager.AddClient(clientId, socket, ipAddress);
 
         // Send existing history to the newly-connected client
-        var history = await this.messageRepository.GetAllAsync();
-        foreach (var msg in history)
+        List<ChatMessage> history = await messageRepository.GetAllAsync();
+        foreach (ChatMessage msg in history)
         {
-            await this.SendMessageAsync(clientId, msg);
+            await SendMessageAsync(clientId, msg);
         }
 
-        await this.BroadcastUsersListAsync();
+        await BroadcastUsersListAsync();
 
-        this.logger.LogInformation(
+        logger.LogInformation(
             "Client connected: {ClientId} from {IpAddress}",
             clientId,
             ipAddress
@@ -292,12 +293,12 @@ public class ChatService : IChatService
 
         try
         {
-            var buffer = new byte[4096];
+            byte[] buffer = new byte[4096];
 
             while (socket.State == WebSocketState.Open)
             {
                 WebSocketReceiveResult result;
-                var clientClosedNormally = false;
+                bool clientClosedNormally = false;
 
                 do
                 {
@@ -325,7 +326,7 @@ public class ChatService : IChatService
                     continue;
                 }
 
-                var json = Encoding.UTF8.GetString(accum.ToArray());
+                string json = Encoding.UTF8.GetString(accum.ToArray());
                 accum.SetLength(0); // reset for next message
 
                 ChatMessage? message;
@@ -335,7 +336,7 @@ public class ChatService : IChatService
                 }
                 catch (JsonException ex)
                 {
-                    this.logger.LogWarning(ex, "Client {ClientId} sent malformed JSON", clientId);
+                    logger.LogWarning(ex, "Client {ClientId} sent malformed JSON", clientId);
                     continue;
                 }
 
@@ -345,27 +346,27 @@ public class ChatService : IChatService
                 }
 
                 // Step 13: dispatch via switch expression instead of nested if/else
-                await this.DispatchMessageAsync(clientId, message);
+                await DispatchMessageAsync(clientId, message);
             }
         }
         catch (WebSocketException ex)
             when (ex.WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely)
         {
-            this.logger.LogWarning("Client {ClientId} disconnected unexpectedly", clientId);
+            logger.LogWarning("Client {ClientId} disconnected unexpectedly", clientId);
         }
         catch (OperationCanceledException)
         {
-            this.logger.LogInformation("Connection with {ClientId} cancelled", clientId);
+            logger.LogInformation("Connection with {ClientId} cancelled", clientId);
         }
         catch (Exception ex)
         {
             // Step 5: single log – HandleError already calls _logger.LogError
-            this.HandleError(clientId, ex, nameof(HandleClientAsync));
+            HandleError(clientId, ex, nameof(HandleClientAsync));
         }
         finally
         {
-            this.clientManager.RemoveClient(clientId);
-            await this.BroadcastUsersListAsync();
+            clientManager.RemoveClient(clientId);
+            await BroadcastUsersListAsync();
 
             if (socket.State == WebSocketState.Open)
             {
@@ -382,11 +383,11 @@ public class ChatService : IChatService
                 }
                 catch (Exception ex)
                 {
-                    this.logger.LogWarning(ex, "Error closing WebSocket for {ClientId}", clientId);
+                    logger.LogWarning(ex, "Error closing WebSocket for {ClientId}", clientId);
                 }
             }
 
-            this.logger.LogInformation("Client disconnected: {ClientId}", clientId);
+            logger.LogInformation("Client disconnected: {ClientId}", clientId);
         }
     }
 
@@ -408,48 +409,48 @@ public class ChatService : IChatService
         await (
             message.Type switch
             {
-                "findUser" => this.HandleFindUserAsync(clientId, message),
-                "clear" => this.HandleClearAsync(message),
-                "switchChat" => this.HandleSwitchChatAsync(clientId, message),
-                "nickname" => this.HandleNicknameAsync(clientId, message),
-                "typing" => this.HandleTypingAsync(clientId, message),
-                _ => this.HandleChatMessageAsync(clientId, message),
+                "findUser" => HandleFindUserAsync(clientId, message),
+                "clear" => HandleClearAsync(message),
+                "switchChat" => HandleSwitchChatAsync(clientId, message),
+                "nickname" => HandleNicknameAsync(clientId, message),
+                "typing" => HandleTypingAsync(clientId, message),
+                _ => HandleChatMessageAsync(clientId, message),
             }
         );
     }
 
     private async Task HandleFindUserAsync(string clientId, ChatMessage message) =>
         // Echo back to the requesting client so the client JS can fire the API call
-        await this.SendMessageAsync(clientId, message);
+        await SendMessageAsync(clientId, message);
 
     private async Task HandleClearAsync(ChatMessage message)
     {
-        var chatRoomId = message.ChatRoomId ?? defaultChatRoomId;
-        await this.ClearChatAsync(chatRoomId);
+        string chatRoomId = message.ChatRoomId ?? DefaultChatRoomId;
+        await ClearChatAsync(chatRoomId);
     }
 
     private async Task HandleSwitchChatAsync(string clientId, ChatMessage message)
     {
-        var chatRoomId = message.ChatRoomId ?? defaultChatRoomId;
-        this.clientManager.UpdateUserCurrentChat(clientId, chatRoomId);
+        string chatRoomId = message.ChatRoomId ?? DefaultChatRoomId;
+        clientManager.UpdateUserCurrentChat(clientId, chatRoomId);
 
-        var messages = await this.GetMessagesByChatAsync(chatRoomId);
-        var onlineUsers = await this.GetOnlineUsersByChatAsync(chatRoomId);
-        await this.BroadcastChatUpdateAsync(chatRoomId, messages, onlineUsers);
+        List<ChatMessage> messages = await GetMessagesByChatAsync(chatRoomId);
+        List<OnlineUser> onlineUsers = await GetOnlineUsersByChatAsync(chatRoomId);
+        await BroadcastChatUpdateAsync(chatRoomId, messages, onlineUsers);
     }
 
     private Task HandleNicknameAsync(string clientId, ChatMessage message)
     {
-        var nickname = SanitizeNickname(message.Name);
-        this.clientManager.UpdateUserNickname(clientId, nickname);
+        string nickname = SanitizeNickname(message.Name);
+        clientManager.UpdateUserNickname(clientId, nickname);
         return Task.CompletedTask;
     }
 
     private async Task HandleTypingAsync(string clientId, ChatMessage message)
     {
-        var nickname = SanitizeNickname(message.Name);
-        this.clientManager.UpdateUserTypingStatus(clientId, message.IsTyping);
-        await this.BroadcastTypingStatusAsync(clientId, nickname, message.IsTyping);
+        string nickname = SanitizeNickname(message.Name);
+        clientManager.UpdateUserTypingStatus(clientId, message.IsTyping);
+        await BroadcastTypingStatusAsync(clientId, nickname, message.IsTyping);
     }
 
     private async Task HandleChatMessageAsync(string clientId, ChatMessage message)
@@ -459,15 +460,15 @@ public class ChatService : IChatService
             return;
         }
 
-        var nickname = SanitizeNickname(message.Name);
-        var chatRoomId = message.ChatRoomId ?? defaultChatRoomId;
+        string nickname = SanitizeNickname(message.Name);
+        string chatRoomId = message.ChatRoomId ?? DefaultChatRoomId;
 
-        this.clientManager.UpdateUserNickname(clientId, nickname);
+        clientManager.UpdateUserNickname(clientId, nickname);
 
         // Step 7 (SanitizeInput removed): store raw text; client escapes on render
         var chatMessage = ChatMessage.Create(message.Text, nickname, chatRoomId, clientId);
-        await this.messageRepository.AddAsync(chatMessage);
-        await this.BroadcastToChatAsync(chatRoomId, chatMessage, clientId);
+        await messageRepository.AddAsync(chatMessage);
+        await BroadcastToChatAsync(chatRoomId, chatMessage, clientId);
     }
 
     // -------------------------------------------------------------------------

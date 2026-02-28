@@ -1,6 +1,7 @@
-namespace SimpleMessenger.Services;
-
+﻿
 using SimpleMessenger.Models;
+
+namespace SimpleMessenger.Services;
 
 public interface IMessageRepository
 {

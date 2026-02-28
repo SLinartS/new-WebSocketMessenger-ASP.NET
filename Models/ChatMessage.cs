@@ -1,6 +1,7 @@
-namespace SimpleMessenger.Models;
-
+﻿
 using System.Text.Json.Serialization;
+
+namespace SimpleMessenger.Models;
 
 public class ChatMessage
 {
