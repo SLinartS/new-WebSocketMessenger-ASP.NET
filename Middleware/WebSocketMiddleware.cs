@@ -45,7 +45,7 @@ public class WebSocketMiddleware(RequestDelegate next, IChatService chatService)
 
         if (ipString.StartsWith("::ffff:"))
         {
-            return ipString.Substring(7);
+            return ipString[7..];
         }
 
         return ipString;

@@ -282,6 +282,10 @@ function setupEventListeners() {
     elements.findUserInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') findUserById();
     });
+
+    if (elements.copyUserIdBtn) {
+        elements.copyUserIdBtn.addEventListener('click', copyUserIdToClipboard);
+    }
 }
 
 function clearChat() {
@@ -344,7 +348,6 @@ function renderUsersList(users) {
         <div class="user-item">
             <div class="user-nickname">${escapeHtml(user.nickname || 'Anonymous')}</div>
             <div class="user-details">
-                <span class="user-ip">${escapeHtml(user.ipAddress || 'unknown')}</span>
                 <span class="user-id">ID: ${escapeHtml(user.id || '')}</span>
             </div>
         </div>
@@ -365,19 +368,12 @@ function renderOnlineUsers(users) {
         <div class="user-item">
             <div class="user-nickname">${escapeHtml(user.nickname || 'Anonymous')}</div>
             <div class="user-details">
-                <span class="user-ip">${escapeHtml(user.ipAddress || 'unknown')}</span>
                 <span class="user-id">ID: ${escapeHtml(user.id || '')}</span>
             </div>
         </div>
     `).join('');
 
     elements.usersList.innerHTML = html + `<div class="users-count">${users.length} user(s) online</div>`;
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
 }
 
 function sendTypingStatus() {
@@ -497,7 +493,7 @@ function renderChatList() {
                 <div class="chat-name">${escapeHtml(chat.name)}</div>
                 <div class="chat-meta">${chat.isPrivate ? 'Private' : 'Public'} chat</div>
             </div>
-            ${chat.id !== 'general' ? '<button class="chat-delete-btn" data-chat-id="${chat.id}">×</button>' : ''}
+            ${chat.id !== 'general' ? `<button class="chat-delete-btn" data-chat-id="${chat.id}">×</button>` : ''}
         </div>
     `).join('');
 
@@ -637,7 +633,7 @@ async function deleteChat(chatId) {
     }
 
     try {
-        const response = await fetch(`/api/chats/${chatId}`, {
+        const response = await fetch(`/api/chats/${chatId}?userId=${encodeURIComponent(userId)}`, {
             method: 'DELETE'
         });
 
@@ -656,9 +652,6 @@ async function deleteChat(chatId) {
         alert('Error deleting chat');
     }
 }
-
-// Initialize on DOM ready
-document.addEventListener('DOMContentLoaded', init);
 
 // Display user's ID
 function displayMyUserId() {
@@ -683,21 +676,5 @@ function copyUserIdToClipboard() {
     }
 }
 
-// Setup event listeners for new elements
-function setupExtraEventListeners() {
-    if (elements.copyUserIdBtn) {
-        elements.copyUserIdBtn.addEventListener('click', copyUserIdToClipboard);
-    }
-}
-
-// Update init to call setupExtraEventListeners
-const originalInit = init;
-init = function () {
-    userId = getOrCreateUserId();
-    connect();
-    setupEventListeners();
-    setupExtraEventListeners();
-    loadUserName();
-    loadCurrentChat();
-    displayMyUserId();
-};
+// Initialize on DOM ready
+document.addEventListener('DOMContentLoaded', init);
